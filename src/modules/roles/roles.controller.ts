@@ -1,0 +1,54 @@
+import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { RoleService } from './services/role.service';
+import { Request } from 'express';
+import { UpdateRoleDto } from './dto/update-role.dto';
+import { CreateRoleDto, PartialCreateRoleDto } from './dto/create-role.dto';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { RoleEntity } from 'src/database/postgres/entities/role.entity';
+import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
+// @Controller({ path: 'roles', host: ':api.example.com' }) get dynamic host with @PostParams()
+@Controller('roles')
+export class RolesController {
+    constructor(
+        private roleService: RoleService
+    ) { }
+    @ApiOperation({ summary: 'Create a new role' })
+    @ApiBearerAuth()
+    @ApiBody({ type: PartialCreateRoleDto })
+    @ApiResponseWrapper(RoleEntity)
+    @Post()
+    create(@Req() req: Request, @Body() createRoleDto: CreateRoleDto, @Ip() ip: string): Promise<any> {
+        return this.roleService.create(createRoleDto, req['user']);
+    }
+    @ApiOperation({ summary: 'Get roles' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(RoleEntity, true)
+    @Get()
+    getAll(@Query() query: any): Promise<any> {
+        return this.roleService.findAll(query);
+    }
+    @ApiOperation({ summary: 'Get role' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(RoleEntity)
+    @Get(':id')
+    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        return this.roleService.findById(id);
+    }
+
+    @ApiOperation({ summary: 'Update role' })
+    @ApiBearerAuth()
+    @ApiBody({ type: PartialCreateRoleDto })
+    @ApiResponseWrapper(RoleEntity)
+    @Put(':id')
+    update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto, @Ip() ip: string): Promise<any> {
+        return this.roleService.update(id, updateRoleDto, req['user']);
+    }
+
+    @ApiOperation({ summary: 'Delete role' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Delete(':id')
+    delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        return this.roleService.remove(id);
+    }
+}

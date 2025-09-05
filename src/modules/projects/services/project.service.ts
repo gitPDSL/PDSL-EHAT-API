@@ -1,0 +1,104 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
+import { Repository } from 'typeorm';
+import { UpdateProjectDto } from '../dto/update-project.dto';
+import { UserEntity } from 'src/database/postgres/entities/user.entity';
+import { CreateProjectDto } from '../dto/create-project.dto';
+
+@Injectable()
+export class ProjectService {
+    constructor(
+        @InjectRepository(ProjectEntity) private readonly projectRepository: Repository<ProjectEntity>
+    ) {
+    }
+    async create(data: Partial<CreateProjectDto>, currentUser: UserEntity | null = null) {
+        try {
+            const projectData: any = data;
+            if (currentUser && currentUser.id) {
+                projectData['updatedBy'] = currentUser;
+            }
+            if (projectData.client)
+                projectData.client = { id: projectData.client };
+
+            const project = await this.projectRepository.save(await this.projectRepository.create(projectData))
+            return project;
+        } catch (error) {
+            console.log(error);
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+    async update(id: string, projectData: Partial<UpdateProjectDto>, currentUser: UserEntity | null = null) {
+        try {
+            if (currentUser && currentUser.id) {
+                projectData['updatedBy'] = currentUser;
+            }
+            let project = await this.projectRepository.findOne({ where: { id } }) || {};
+            Object.keys(projectData).map(key => {
+                project[key] = projectData[key];
+            })
+            await this.projectRepository.save(project);
+            // console.log('update project', project)
+            return project;
+        } catch (error) {
+            console.log('error-----', error, projectData)
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+    async findAll(query: any = {}) {
+        try {
+            const projects = await this.projectRepository.find(query);
+            return projects;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+
+    async findById(id: string, refreshToken: boolean = false) {
+        try {
+            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
+            const project = await this.projectRepository.findOneBy({ id });
+            return project;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+    async findOne(query: Object, selectFields: string = '') {
+        try {
+            const project = await this.projectRepository.findOne({ where: query });
+            return project;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+    async remove(id: string) {
+        try {
+            const project = await this.projectRepository.delete(id);
+            return project;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+
+}
