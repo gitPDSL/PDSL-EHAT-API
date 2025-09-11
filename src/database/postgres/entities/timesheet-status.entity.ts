@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { ApiProperty } from "@nestjs/swagger";
+import { TimesheetEntity } from "./timesheet.entity";
 
 @Entity({ name: 'timesheet_statuses' })
 export class TimesheetStatusEntity {
@@ -27,4 +28,8 @@ export class TimesheetStatusEntity {
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'updated_by' })
     updatedBy: UserEntity | null;
+
+    // One role can be assigned to many users
+    @OneToMany(() => TimesheetEntity, (timesheet) => timesheet.status)
+    users: TimesheetEntity[];
 }
