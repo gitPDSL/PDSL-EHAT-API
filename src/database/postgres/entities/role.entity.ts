@@ -5,7 +5,7 @@ import { ApiProperty } from "@nestjs/swagger";
 @Entity({ name: 'roles' })
 export class RoleEntity {
     @ApiProperty()
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryGeneratedColumn()
     id: string;
     @ApiProperty()
     @Column()

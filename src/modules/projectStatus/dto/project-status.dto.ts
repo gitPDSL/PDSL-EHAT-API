@@ -2,7 +2,7 @@ import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
-export class CreateRoleDto {
+export class CreateProjectStatusDto {
     @ApiProperty()
     @IsString()
     name: string;
@@ -19,6 +19,8 @@ export class CreateRoleDto {
     updatedBy?: UserEntity;
 }
 
-export class PartialCreateRoleDto extends PartialType(
-    OmitType(CreateRoleDto, ['createdBy', 'updatedBy'] as const)
+export class PartialCreateProjectStatusDto extends PartialType(
+    OmitType(CreateProjectStatusDto, ['createdBy', 'updatedBy'] as const)
 ) { }
+
+export class UpdateProjectStatusDto extends PartialType(OmitType(CreateProjectStatusDto, [])) { }

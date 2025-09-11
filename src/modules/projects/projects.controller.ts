@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { ProjectService } from './services/project.service';
 import { Request } from 'express';
-import { UpdateProjectDto } from './dto/update-project.dto';
-import { CreateProjectDto, PartialCreateProjectDto } from './dto/create-project.dto';
+import { CreateProjectDto, PartialCreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';

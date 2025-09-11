@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
 import { Repository } from 'typeorm';
-import { UpdateProjectUserDto } from '../dto/update-project-user.dto';
+import { UpdateProjectUserDto } from '../dto/project-user.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
-import { CreateProjectDto } from 'src/modules/projects/dto/create-project.dto';
+import { CreateProjectDto } from 'src/modules/projects/dto/project.dto';
 
 @Injectable()
 export class ProjectUserService {

@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { DepartmentService } from './services/department.service';
 import { Request } from 'express';
-import { UpdateDepartmentDto } from './dto/update-department.dto';
-import { CreateDepartmentDto, PartialCreateDepartmentDto } from './dto/create-department.dto';
+import { CreateDepartmentDto, PartialCreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { DepartmentEntity } from 'src/database/postgres/entities/department.entity';

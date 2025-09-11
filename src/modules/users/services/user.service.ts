@@ -5,8 +5,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { MailService } from 'src/mail/mail.service';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { UpdateUserDto } from '../dto/update-user.dto';
-import { CreateUserDto } from '../dto/create-user.dto';
+import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { ACCOUNT_STATUS } from 'src/constants/account.constants';
 
 @Injectable()

@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { TimesheetService } from './services/timesheet.service';
 import { Request } from 'express';
-import { UpdateTimesheetDto } from './dto/update-timesheet.dto';
-import { CreateTimesheetDto, PartialCreateTimesheetDto } from './dto/create-timesheet.dto';
+import { CreateTimesheetDto, PartialCreateTimesheetDto, UpdateTimesheetDto } from './dto/timesheet.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';

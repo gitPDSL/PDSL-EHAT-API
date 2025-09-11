@@ -49,3 +49,5 @@ export class CreateTimesheetDto {
 export class PartialCreateTimesheetDto extends PartialType(
     OmitType(CreateTimesheetDto, ['createdBy', 'updatedBy'] as const)
 ) { }
+
+export class UpdateTimesheetDto extends PartialType(OmitType(CreateTimesheetDto, [])) { }

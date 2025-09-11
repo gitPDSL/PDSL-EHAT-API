@@ -36,7 +36,7 @@ async function bootstrap() {
   const port = config.get<number>('APP_PORT', 3000)
   app.setGlobalPrefix('api');
   app.enableCors({
-    origin: [process.env.APP_URL], // or '*'
+    origin: [process.env.APP_URL, 'http://localhost'], // or '*'
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type, Authorization, X-Requested-With',
     credentials: true, // if using cookies

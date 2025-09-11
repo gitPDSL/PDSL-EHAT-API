@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ClientEntity } from 'src/database/postgres/entities/client.entity';
 import { Repository } from 'typeorm';
-import { UpdateClientDto } from '../dto/update-client.dto';
+import { UpdateClientDto } from '../dto/client.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()

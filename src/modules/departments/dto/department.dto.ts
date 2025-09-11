@@ -2,7 +2,7 @@ import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
 import { IsOptional, IsString } from "class-validator";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
-export class CreateTimesheetStatusDto {
+export class CreateDepartmentDto {
     @ApiProperty()
     @IsString()
     name: string;
@@ -18,7 +18,7 @@ export class CreateTimesheetStatusDto {
     @IsOptional()
     updatedBy?: UserEntity;
 }
-
-export class PartialCreateTimesheetStatusDto extends PartialType(
-    OmitType(CreateTimesheetStatusDto, ['createdBy', 'updatedBy'] as const)
+export class PartialCreateDepartmentDto extends PartialType(
+    OmitType(CreateDepartmentDto, ['createdBy', 'updatedBy'] as const)
 ) { }
+export class UpdateDepartmentDto extends PartialType(OmitType(CreateDepartmentDto, [])) { }

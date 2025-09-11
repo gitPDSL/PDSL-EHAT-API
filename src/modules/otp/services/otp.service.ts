@@ -1,10 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OtpEntity } from 'src/database/postgres/entities/otp.entity';
-import { MailService } from 'src/mail/mail.service';
 import { Repository } from 'typeorm';
-import { UpdateOtpDto } from '../dto/update-otp.dto';
+import { UpdateOtpDto } from '../dto/otp.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()

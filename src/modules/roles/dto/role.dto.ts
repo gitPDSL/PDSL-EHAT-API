@@ -1,17 +1,14 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
-import { IsDateString, IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
-export class CreateOtpDto {
+export class CreateRoleDto {
     @ApiProperty()
     @IsString()
-    code: string;
+    name: string;
     @ApiProperty()
-    user: string;
-    @ApiProperty()
-    @IsDateString()
-    @IsOptional()
-    expiredAt?: Date;
+    @IsString()
+    description: string;
     @ApiProperty()
     @IsString()
     @IsOptional()
@@ -22,6 +19,9 @@ export class CreateOtpDto {
     updatedBy?: UserEntity;
 }
 
-export class PartialCreateOtpDto extends PartialType(
-    OmitType(CreateOtpDto, ['createdBy', 'updatedBy'] as const)
+export class PartialCreateRoleDto extends PartialType(
+    OmitType(CreateRoleDto, ['createdBy', 'updatedBy'] as const)
 ) { }
+
+
+export class UpdateRoleDto extends PartialType(OmitType(CreateRoleDto, [])) { }

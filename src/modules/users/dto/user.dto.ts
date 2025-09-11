@@ -46,3 +46,5 @@ export class CreateUserDto {
 export class PartialCreateUserDto extends PartialType(
     OmitType(CreateUserDto, ['createdBy', 'updatedBy', 'refreshToken'] as const)
 ) { }
+
+export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, [])) { }

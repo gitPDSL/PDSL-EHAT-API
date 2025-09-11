@@ -13,8 +13,8 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
-import { PartialCreateUserDto } from '../users/dto/create-user.dto';
-import { UpdateUserDto } from '../users/dto/update-user.dto';
+import { PartialCreateUserDto } from '../users/dto/user.dto';
+import { UpdateUserDto } from '../users/dto/user.dto';
 
 @Controller('auth')
 export class AuthController {

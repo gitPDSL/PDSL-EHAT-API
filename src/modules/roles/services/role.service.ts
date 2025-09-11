@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoleEntity } from 'src/database/postgres/entities/role.entity';
 import { Repository } from 'typeorm';
-import { UpdateRoleDto } from '../dto/update-role.dto';
+import { UpdateRoleDto } from '../dto/role.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()

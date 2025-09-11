@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { OtpService } from './services/otp.service';
 import { Request } from 'express';
-import { UpdateOtpDto } from './dto/update-otp.dto';
-import { CreateOtpDto, PartialCreateOtpDto } from './dto/create-otp.dto';
+import { CreateOtpDto, PartialCreateOtpDto, UpdateOtpDto } from './dto/otp.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { OtpEntity } from 'src/database/postgres/entities/otp.entity';

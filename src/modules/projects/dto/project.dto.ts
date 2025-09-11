@@ -44,3 +44,5 @@ export class CreateProjectDto {
 export class PartialCreateProjectDto extends PartialType(
     OmitType(CreateProjectDto, ['createdBy', 'updatedBy'] as const)
 ) { }
+
+export class UpdateProjectDto extends PartialType(OmitType(CreateProjectDto, [])) { }

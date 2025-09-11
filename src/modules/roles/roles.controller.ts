@@ -1,8 +1,7 @@
 import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { RoleService } from './services/role.service';
 import { Request } from 'express';
-import { UpdateRoleDto } from './dto/update-role.dto';
-import { CreateRoleDto, PartialCreateRoleDto } from './dto/create-role.dto';
+import { CreateRoleDto, PartialCreateRoleDto, UpdateRoleDto } from './dto/role.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { RoleEntity } from 'src/database/postgres/entities/role.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';

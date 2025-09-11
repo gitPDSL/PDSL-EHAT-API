@@ -17,6 +17,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { TimesheetsModule } from './modules/timesheets/timesheets.module';
 import { TimesheetStatusesModule } from './modules/timesheetStatuses/timesheet-statuses.module';
 import { ProjectUsersModule } from './modules/projectUsers/project-users.module';
+import { ProjectStatusesModule } from './modules/projectStatus/project-statuses.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ProjectUsersModule } from './modules/projectUsers/project-users.module'
     RolesModule,
     ClientsModule,
     DepartmentsModule,
+    ProjectStatusesModule,
     ProjectsModule,
     ProjectUsersModule,
     TimesheetStatusesModule,

@@ -2,9 +2,9 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { Repository } from 'typeorm';
-import { UpdateTimesheetDto } from '../dto/update-timesheet.dto';
+import { UpdateTimesheetDto } from '../dto/timesheet.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
-import { CreateTimesheetDto } from '../dto/create-timesheet.dto';
+import { CreateTimesheetDto } from '../dto/timesheet.dto';
 
 @Injectable()
 export class TimesheetService {

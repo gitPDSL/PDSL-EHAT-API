@@ -2,8 +2,8 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGenerat
 import { UserEntity } from "./user.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
-@Entity({ name: 'timesheet_statuses' })
-export class TimesheetStatusEntity {
+@Entity({ name: 'project_statuses' })
+export class ProjectStatusEntity {
     @ApiProperty()
     @PrimaryGeneratedColumn()
     id: string;
