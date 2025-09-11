@@ -1,11 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { ApiProperty } from "@nestjs/swagger";
 
 @Entity({ name: 'project_statuses' })
 export class ProjectStatusEntity {
     @ApiProperty()
-    @PrimaryGeneratedColumn()
+    @PrimaryColumn()
     id: string;
     @ApiProperty()
     @Column()
