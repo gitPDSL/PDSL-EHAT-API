@@ -1,21 +1,31 @@
-import { connectionSource } from "src/config/typeorm.config";
+import { connectionSource } from "../../../config/typeorm.config";
 import { TimesheetStatusEntity } from "../entities/timesheet-status.entity";
 
-async function seed() {
-    await connectionSource.initialize();
-    const timesheetStatusRepo = connectionSource.getRepository(TimesheetStatusEntity);
-    const timesheetStatuses = [
-        {
-            id: "PENDING",
-            name: "Pending",
-            description: "Pending"
-        },
-        {
-            id: "APPROVED",
-            name: "Approved",
-            description: "Approved"
-        },
-    ];
-    await timesheetStatusRepo.save(timesheetStatuses);
-}
-seed();
+export const TimesheetStatusSeeds = async () => {
+    try {
+        if (!connectionSource.isInitialized) {
+            await connectionSource.initialize();
+        }
+
+        const timesheetStatusRepo = connectionSource.getRepository(TimesheetStatusEntity);
+        const timesheetStatuses = [
+            { id: "PENDING", name: "Pending", description: "Pending" },
+            { id: "APPROVED", name: "Approved", description: "Approved" },
+        ];
+
+        // Optional: Check if records exist to avoid duplicates
+        for (const status of timesheetStatuses) {
+            const exists = await timesheetStatusRepo.findOneBy({ id: status.id });
+            if (!exists) {
+                await timesheetStatusRepo.save(status);
+            }
+        }
+
+    } catch (error) {
+        console.error("Error seeding TimesheetStatus:", error);
+    } finally {
+        // await connectionSource.destroy();
+    }
+};
+
+// TimesheetStatusSeeds();

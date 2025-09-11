@@ -4,6 +4,7 @@ import { ClientEntity } from "./client.entity";
 import { ProjectUserEntity } from "./project-user.entity";
 import { ApiProperty } from "@nestjs/swagger";
 import { TimesheetEntity } from "./timesheet.entity";
+import { ProjectStatusEntity } from "./project-status.entity";
 
 export enum ProjectStatus {
     // Define enum values that correspond to your PostgreSQL enum `public.project_status`
@@ -36,12 +37,9 @@ export class ProjectEntity {
     @Column({ type: 'timestamp', name: 'completed_at', nullable: true })
     completedAt: Date | null;
     @ApiProperty()
-    @Column({
-        type: 'enum',
-        enum: ProjectStatus,
-        default: ProjectStatus.ACTIVE
-    })
-    status: ProjectStatus;
+    @ManyToOne(() => ProjectStatusEntity, { nullable: true })
+    @JoinColumn({ name: 'status' })
+    status?: ProjectStatusEntity;
     @ApiProperty()
     @CreateDateColumn({ type: 'timestamp', name: 'started_at', nullable: true })
     startedAt: Date;

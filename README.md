@@ -149,3 +149,21 @@ Step 3: Exchange code → you’ll get:
 Access Token
 
 Refresh Token ← save this!
+
+
+## Migrations command
+npm i ts-node --g
+npm run typeorm:generate
+npm run typeorm:migrate
+npm run typeorm:seed
+
+
+## Deploy
+
+npm i --legacy-peer-deps
+run migration commands
+npm run build
+pm2 start ecosystem.config.js  for start service
+pm2 restart ecosystem.config.js  for restart service
+pm2 stop ecosystem.config.js  for stop service
+pm2 delete ecosystem.config.js  for delete service

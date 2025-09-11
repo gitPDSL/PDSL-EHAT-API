@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm:generate": "npx typeorm-ts-node-commonjs migration:generate ./src/database/postgres/migrations/InitialMigration -d ./src/config/typeorm.config.ts",
     "typeorm:migrate": "npx typeorm-ts-node-commonjs migration:run -d ./src/config/typeorm.config.ts",
+    "typeorm:seed": "ts-node ./src/database/postgres/seeds/index.ts",
     "typeorm:revert": "npx typeorm-ts-node-commonjs migration:revert -d ./src/config/typeorm.config.ts",
     "start:nest": "nest start --watch",
     "start:admin": "cd admin-ui & ng serve",
@@ -52,7 +53,8 @@
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.26"
+    "typeorm": "^0.3.26",
+    "typeorm-seeding": "^1.6.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -65,7 +67,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.10.7",
+    "@types/node": "^22.18.1",
     "@types/supertest": "^6.0.2",
     "concurrently": "^9.2.0",
     "eslint": "^9.18.0",
