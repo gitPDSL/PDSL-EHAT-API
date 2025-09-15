@@ -62,7 +62,7 @@ export class UserEntity {
     @Column({
         type: 'enum',
         enum: ACCOUNT_STATUS,
-        default: ACCOUNT_STATUS.ACTIVE,
+        default: ACCOUNT_STATUS.PENDING,
     })
     status: ACCOUNT_STATUS;
 
