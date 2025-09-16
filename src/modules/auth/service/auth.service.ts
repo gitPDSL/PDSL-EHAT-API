@@ -19,8 +19,8 @@ export class AuthService {
             await this.userService.sendVerificationMail(user)
             throw new UnauthorizedException('User is not active');
         }
-        const tokens = await this.getTokens(user?._id, user.email);
-        await this.updateRefreshToken(user?._id, tokens.refreshToken);
+        const tokens = await this.getTokens(user?.id, user.email);
+        await this.updateRefreshToken(user?.id, tokens.refreshToken);
         return tokens;
 
     }
@@ -56,12 +56,13 @@ export class AuthService {
 
         return tokens;
     }
-    async verify(decoded: any) {
+    async verify(decoded: any, password) {
         const user = await this.userService.findById(decoded.sub, true);
         // console.log(user)
         if (!user || !user.email || user.email != decoded.email) throw new ForbiddenException('Invalid token');
-
-        return this.userService.update(decoded.sub, { status: ACCOUNT_STATUS.ACTIVE });
+        if (user.status == ACCOUNT_STATUS.ACTIVE)
+            throw new ForbiddenException('Already verified');
+        return this.userService.update(decoded.sub, { status: ACCOUNT_STATUS.ACTIVE, password });
     }
     async forgotPassword(email: string) {
         const user = await this.userService.findOne({ email });

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './service/auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -45,8 +45,14 @@ export class AuthController {
     @ApiOperation({ summary: 'Verify user' })
     @ApiResponseWrapper(class { })
     @Put('verify/:token')
-    async verifyUser(@Param('token', JwtParserPipe) decoded: any): Promise<any> {
-        return this.authService.verify(decoded)
+    async verifyUser(
+        @Param('token', JwtParserPipe) decoded: any,
+        @Body('password', PasswordValidationPipe) password: string,
+        @Body('confirmPassword', PasswordValidationPipe) confirmPassword: string
+    ): Promise<any> {
+        if (password !== confirmPassword)
+            return new BadRequestException('Password and confirm password not match');
+        return this.authService.verify(decoded, password)
     }
     @ApiOperation({ summary: 'Forgot password' })
     @ApiBody({ type: ForgotPasswordDto })
@@ -61,8 +67,11 @@ export class AuthController {
     @Put('reset-password/:token')
     async resetUserPassword(
         @Param('token', JwtParserPipe) decoded: any,
-        @Body('password', PasswordValidationPipe) password: string
+        @Body('password', PasswordValidationPipe) password: string,
+        @Body('confirmPassword', PasswordValidationPipe) confirmPassword: string
     ): Promise<any> {
+        if (password !== confirmPassword)
+            return new BadRequestException('Password and confirm password not match');
         return this.authService.resetPassword(decoded, password)
     }
     @ApiOperation({ summary: 'Get logged user detail' })
@@ -70,7 +79,7 @@ export class AuthController {
     @ApiBearerAuth()
     @Get()
     getLoggedUser(@Req() req: Request): Promise<UserEntity | any> {
-        return this.authService.userService.findById(req['user']._id);
+        return this.authService.userService.findById(req['user'].id);
     }
     @ApiOperation({ summary: 'Refresh token', description: 'Need to pass refresh token in Authorization' })
     @ApiBearerAuth()

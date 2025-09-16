@@ -34,17 +34,17 @@ export class UserService {
     }
     async sendVerificationMail(user: any) {
         // console.log(user);
-        const token = await this.jwtService.signAsync({ sub: user._id, email: user.email }, {
+        const token = await this.jwtService.signAsync({ sub: user.id, email: user.email }, {
             expiresIn: '15m',
         });
         await this.mailService.sendAccountVerification(user.email, user.fullName, process.env.APP_URL + '/verify/' + token);
 
     }
     async sendForgotPasswordMail(user: any) {
-        const token = await this.jwtService.signAsync({ sub: user._id, email: user.email }, {
+        const token = await this.jwtService.signAsync({ sub: user.id, email: user.email }, {
             expiresIn: '15m',
         });
-        await this.mailService.sendForgotPassword(user.email, user.fullName, process.env.APP_URL + '/reset/' + token);
+        await this.mailService.sendForgotPassword(user.email, user.fullName, process.env.APP_URL + '/reset-password/' + token);
 
     }
     async create(data: Partial<CreateUserDto>, currentUser: UserEntity | null = null) {
