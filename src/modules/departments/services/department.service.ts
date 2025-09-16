@@ -8,7 +8,8 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 @Injectable()
 export class DepartmentService {
     constructor(
-        @InjectRepository(DepartmentEntity) private readonly departmentRepository: Repository<DepartmentEntity>
+        @InjectRepository(DepartmentEntity) private readonly departmentRepository: Repository<DepartmentEntity>,
+
     ) {
     }
     async create(departmentData: Partial<DepartmentEntity>, currentUser: UserEntity | null = null) {
@@ -39,6 +40,7 @@ export class DepartmentService {
                 department[key] = departmentData[key];
             })
             await this.departmentRepository.save(department);
+
             // console.log('update department', department)
             return department;
         } catch (error) {
@@ -51,7 +53,14 @@ export class DepartmentService {
     }
     async findAll(query: any = {}) {
         try {
-            const departments = await this.departmentRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const departments = page ? await this.departmentRepository.find({
+                where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: ['users']
+            }) : await this.departmentRepository.find({ where: filter, relations: ['users'] });
+            // console.log(departments)
             return departments;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -86,7 +95,9 @@ export class DepartmentService {
     }
     async remove(id: string) {
         try {
+
             const department = await this.departmentRepository.delete(id);
+
             return department;
         } catch (error) {
             if (error.name == 'ValidationError') {

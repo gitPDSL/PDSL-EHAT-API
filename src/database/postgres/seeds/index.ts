@@ -2,6 +2,7 @@ import { connectionSource } from "../../../config/typeorm.config";
 import { TimesheetStatusSeeds } from "./timesheet-status.seed";
 import { ProjectStatusSeeds } from "./project-status.seed";
 import { RoleSeeds } from "./roles.seed";
+import { UserSeeds } from "./users.seed";
 
 async function runSeeds() {
     try {
@@ -12,7 +13,7 @@ async function runSeeds() {
         await TimesheetStatusSeeds();
         await RoleSeeds();
         await ProjectStatusSeeds();
-
+        await UserSeeds()
     } catch (error) {
         console.error("Error running seeds:", error);
     } finally {

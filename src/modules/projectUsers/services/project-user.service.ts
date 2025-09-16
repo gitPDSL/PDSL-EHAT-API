@@ -63,7 +63,11 @@ export class ProjectUserService {
     }
     async findAll(query: any = {}) {
         try {
-            const projectUsers = await this.projectUserRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.projectUserRepository.find(filter);
             return projectUsers;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -109,5 +113,15 @@ export class ProjectUserService {
             throw error;
         }
     }
-
+    async removeMany(query: Record<string, any>) {
+        try {
+            const projectUser = await this.projectUserRepository.delete(query);
+            return projectUser;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
 }

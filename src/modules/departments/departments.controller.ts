@@ -5,11 +5,12 @@ import { CreateDepartmentDto, PartialCreateDepartmentDto, UpdateDepartmentDto } 
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { DepartmentEntity } from 'src/database/postgres/entities/department.entity';
-// @Controller({ path: 'departments', host: ':api.example.com' }) get dynamic host with @PostParams()
+import { UserService } from '../users/services/user.service';
 @Controller('departments')
 export class DepartmentsController {
     constructor(
-        private departmentService: DepartmentService
+        private departmentService: DepartmentService,
+        private userService: UserService
     ) { }
     @ApiOperation({ summary: 'Create a new department' })
     @ApiBearerAuth()
@@ -40,14 +41,30 @@ export class DepartmentsController {
     @ApiBody({ type: PartialCreateDepartmentDto })
     @ApiResponseWrapper(DepartmentEntity)
     @Put(':id')
-    update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateDepartmentDto: UpdateDepartmentDto, @Ip() ip: string): Promise<any> {
+    async update(@Req() req: Request,
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() updateDepartmentDto: UpdateDepartmentDto,
+        @Query() query: any): Promise<any> {
+        if (id && query.userUpdate)
+            // remove department from all user
+            try {
+                await this.userService.bulkUpdate({ department: id }, { department: null }, req['user']);
+            } catch (er) {
+                console.error('-=-===-==--===-----', er)
+            }
         return this.departmentService.update(id, updateDepartmentDto, req['user']);
     }
 
     @ApiOperation({ summary: 'Delete department' })
     @ApiBearerAuth()
     @Delete(':id')
-    delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    async delete(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        // console.log('hi-----------------------------------')
+        try {
+            await this.userService.bulkUpdate({ department: id }, { department: null }, req['user']);
+        } catch (er) {
+            console.error('-=-===-==--===-----', er)
+        }
         return this.departmentService.remove(id);
     }
 }

@@ -35,7 +35,7 @@ export class UserEntity {
     @Column({ type: 'text', nullable: true })
     email: string | null;
     @ApiProperty()
-    @Column({ type: 'text', name: 'password_hash', select: false })
+    @Column({ type: 'text', name: 'password_hash', select: false, nullable: true })
     passwordHash: string;
 
     // ---------- Relations ----------

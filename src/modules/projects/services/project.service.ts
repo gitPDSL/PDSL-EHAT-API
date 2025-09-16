@@ -56,7 +56,11 @@ export class ProjectService {
     }
     async findAll(query: any = {}) {
         try {
-            const projects = await this.projectRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.projectRepository.find(filter);
             return projects;
         } catch (error) {
             if (error.name == 'ValidationError') {

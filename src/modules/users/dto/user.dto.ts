@@ -12,24 +12,25 @@ export class CreateUserDto {
     @IsString()
     email: string;
     @ApiProperty()
+    @IsOptional()
     @MinLength(8)
     password: string;
     @ApiProperty()
     @IsOptional()
     @IsString()
     designation?: string;
-    @ApiProperty({description: 'Id of department'})
+    @ApiProperty({ description: 'Id of department' })
     @IsOptional()
-    department?: string;
+    department?: string | null;
     @ApiProperty()
     @IsOptional()
     status?: ACCOUNT_STATUS;
-    @ApiProperty({description: 'Id of role'})
+    @ApiProperty({ description: 'Id of role' })
     @IsOptional()
     role?: string;
-    @ApiProperty({description: 'Id of user'})
+    @ApiProperty({ description: 'Id of user' })
     @IsOptional()
-    manager?: string;
+    manager?: string | null;
     @ApiProperty()
     @IsOptional()
     refreshToken?: string;
@@ -48,3 +49,4 @@ export class PartialCreateUserDto extends PartialType(
 ) { }
 
 export class UpdateUserDto extends PartialType(OmitType(CreateUserDto, [])) { }
+

@@ -51,7 +51,11 @@ export class RoleService {
     }
     async findAll(query: any = {}) {
         try {
-            const roles = await this.roleRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const roles = page ? await this.roleRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.roleRepository.find({ where: filter });
             return roles;
         } catch (error) {
             if (error.name == 'ValidationError') {

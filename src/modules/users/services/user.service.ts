@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
@@ -64,8 +64,9 @@ export class UserService {
             if (userData.department)
                 userData.department = { id: userData.department };
             const user = await this.userRepository.create(userData);
-            const newUser = await this.userRepository.save(user)
-            if (userData.status == ACCOUNT_STATUS.PENDING)
+            const newUser: any = await this.userRepository.save(user)
+            console.log(newUser)
+            if (newUser.status == ACCOUNT_STATUS.PENDING)
                 await this.sendVerificationMail(newUser);
             return user;
         } catch (error) {
@@ -101,7 +102,7 @@ export class UserService {
             })
             await this.userRepository.save(user);
             // console.log('update user', user)
-            return user;
+            return await this.userRepository.findOne({ where: { id } }) || {};
         } catch (error) {
             console.log('error-----', error, userData)
             if (error.name == 'ValidationError') {
@@ -110,9 +111,60 @@ export class UserService {
             throw error;
         }
     }
+    async bulkUpdate(
+        query: Record<string, any> = {},
+        data: Partial<UpdateUserDto>,
+        currentUser: UserEntity | any
+    ): Promise<UserEntity[] | UserEntity> {
+        if (!query || Object.keys(query).length === 0 || Array.isArray(query)) {
+            throw new BadRequestException('Valid query object is required when no IDs are provided.');
+        }
+        const userData: any = data;
+        // console.log('-------------------', query, userData)
+        try {
+            if (query.role)
+                query.role = { id: query.role };
+            if (query.manager)
+                query.manager = { id: query.manager };
+            if (query.department)
+                query.department = { id: query.department };
+            const users = await this.userRepository.find({ where: query, relations: ['department', 'role', 'manager'] });
+            // console.log('====================', users)
+            if (!users) throw new NotFoundException('No user found matching the query.');
+            let userList: any = [];
+            if (userData.role)
+                userData.role = { id: userData.role };
+            if (userData.manager)
+                userData.manager = { id: userData.manager };
+            if (userData.department)
+                userData.department = { id: userData.department };
+            for (let user of users) {
+                if (userData.password) {
+                    userData['passwordHash'] = await bcrypt.hash(userData.password, 10);
+                    delete userData.password;
+                }
+
+                Object.assign(user, {
+                    ...userData,
+                    updatedBy: currentUser,
+                });
+                // console.log(user)
+                user = await this.userRepository.save(user);
+                userList.push(user);
+            }
+            return userList;
+        } catch (err) {
+            console.log('--=--==-', err);
+            return []
+        }
+    }
     async findAll(query: any = {}) {
         try {
-            const users = await this.userRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const users = page ? await this.userRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: ['department', 'role', 'manager'] }) : await this.userRepository.find({ where: filter, relations: ['department', 'role', 'manager'] });
             return users;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -145,7 +197,7 @@ export class UserService {
             throw error;
         }
     }
-    async remove(id: string) {
+    async remove(id: string, currentUser: any) {
         try {
             const user = await this.userRepository.delete(id);
             return user;

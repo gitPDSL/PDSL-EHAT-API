@@ -24,7 +24,7 @@ export class TimesheetService {
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
-            
+
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
         } catch (error) {
@@ -60,7 +60,11 @@ export class TimesheetService {
     }
     async findAll(query: any = {}) {
         try {
-            const timesheets = await this.timesheetRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const timesheets = page ? await this.timesheetRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.timesheetRepository.find(filter);
             return timesheets;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -96,6 +100,17 @@ export class TimesheetService {
     async remove(id: string) {
         try {
             const timesheet = await this.timesheetRepository.delete(id);
+            return timesheet;
+        } catch (error) {
+            if (error.name == 'ValidationError') {
+                throw new BadRequestException(error.errors);
+            }
+            throw error;
+        }
+    }
+    async removeMany(query: Record<string, any>) {
+        try {
+            const timesheet = await this.timesheetRepository.delete(query);
             return timesheet;
         } catch (error) {
             if (error.name == 'ValidationError') {

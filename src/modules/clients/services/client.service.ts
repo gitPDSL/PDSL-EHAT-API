@@ -51,7 +51,11 @@ export class ClientService {
     }
     async findAll(query: any = {}) {
         try {
-            const clients = await this.clientRepository.find(query);
+            const { page, limit, sortBy, order, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const clients = page ? await this.clientRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.clientRepository.find(filter);
             return clients;
         } catch (error) {
             if (error.name == 'ValidationError') {
