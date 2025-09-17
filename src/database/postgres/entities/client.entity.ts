@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { ApiProperty } from "@nestjs/swagger";
+import { ProjectEntity } from "./project.entity";
 
 @Entity({ name: 'cilents' })
 export class ClientEntity {
@@ -27,4 +28,8 @@ export class ClientEntity {
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'updated_by' })
     updatedBy: UserEntity | null;
+
+    // 🔹 Relation: one department → many projects
+    @OneToMany(() => ProjectEntity, (project) => project.client)
+    projects: ProjectEntity[];
 }

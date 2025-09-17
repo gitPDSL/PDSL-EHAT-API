@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
 import { Repository } from 'typeorm';
@@ -61,13 +61,46 @@ export class ProjectUserService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async bulkUpdate(
+        query: Record<string, any> = {},
+        data: Partial<UpdateProjectUserDto>,
+        currentUser: UserEntity | any
+    ): Promise<UserEntity[] | UserEntity> {
+        if (!query || Object.keys(query).length === 0 || Array.isArray(query)) {
+            throw new BadRequestException('Valid query object is required when no IDs are provided.');
+        }
+        const projectUserData: any = data;
+        // console.log('-------------------', query, projectUserData)
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const projectUsers = await this.projectUserRepository.find({ where: query });
+            // console.log('====================', users)
+            if (!projectUsers) throw new NotFoundException('No user found matching the query.');
+            let projectUserList: any = [];
+
+            for (let projectUser of projectUsers) {
+
+
+                Object.assign(projectUser, {
+                    ...projectUserData,
+                    updatedBy: currentUser,
+                });
+                // console.log(user)
+                projectUser = await this.projectUserRepository.save(projectUser);
+                projectUserList.push(projectUser);
+            }
+            return projectUserList;
+        } catch (err) {
+            console.log('--=--==-', err);
+            return []
+        }
+    }
+    async findAll(query: Record<string, any> = {}) {
+        try {
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.projectUserRepository.find(filter);
+            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select });
             return projectUsers;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -77,9 +110,9 @@ export class ProjectUserService {
         }
     }
 
-    async findById(projectId: string, userId: string) {
+    async findById(projectId: string, userId: string, relations: string[] = []) {
         try {
-            const projectUser = await this.projectUserRepository.findOneBy({ projectId, userId });
+            const projectUser = await this.projectUserRepository.findOne({ where: { projectId, userId }, relations });
             return projectUser;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -88,9 +121,10 @@ export class ProjectUserService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const projectUser = await this.projectUserRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const projectUser = await this.projectUserRepository.findOne({ where: filter, relations });
             return projectUser;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -101,7 +135,7 @@ export class ProjectUserService {
     }
     async remove(projectId: string, userId: string,) {
         try {
-            const projectUser = await this.findOne(projectId, userId);
+            const projectUser = await this.findById(projectId, userId);
             if (projectUser)
                 return this.projectUserRepository.remove(projectUser);
             else

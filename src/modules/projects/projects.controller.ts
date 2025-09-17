@@ -5,11 +5,13 @@ import { CreateProjectDto, PartialCreateProjectDto, UpdateProjectDto } from './d
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
+import { ProjectUserService } from '../projectUsers/services/project-user.service';
 // @Controller({ path: 'projects', host: ':api.example.com' }) get dynamic host with @PostParams()
 @Controller('projects')
 export class ProjectsController {
     constructor(
-        private projectService: ProjectService
+        private projectService: ProjectService,
+        private projectUserService: ProjectUserService
     ) { }
     @ApiOperation({ summary: 'Create a new project' })
     @ApiBearerAuth()
@@ -24,14 +26,18 @@ export class ProjectsController {
     @ApiBearerAuth()
     @ApiResponseWrapper(ProjectEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.projectService.findAll(query);
     }
     @ApiOperation({ summary: 'Get project' })
     @ApiBearerAuth()
     @ApiResponseWrapper(ProjectEntity)
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    get(@Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.projectService.findById(id);
     }
 
@@ -40,7 +46,14 @@ export class ProjectsController {
     @ApiBody({ type: PartialCreateProjectDto })
     @ApiResponseWrapper(ProjectEntity)
     @Put(':id')
-    update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateProjectDto: UpdateProjectDto, @Ip() ip: string): Promise<any> {
+    async update(@Req() req: Request, @Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string, @Body() updateProjectDto: UpdateProjectDto, @Ip() ip: string): Promise<any> {
+        if (id && query.removeProjectUser)
+            // remove department from all user
+            try {
+                await this.projectUserService.removeMany({ projectId: id });
+            } catch (er) {
+                console.error('-=-===-==--===-----', er)
+            }
         return this.projectService.update(id, updateProjectDto, req['user']);
     }
 

@@ -16,11 +16,12 @@ export class ProjectService {
         try {
             const projectData: any = data;
             if (currentUser && currentUser.id) {
-                projectData['updatedBy'] = currentUser;
+                projectData['createdBy'] = currentUser;
             }
             if (projectData.client)
                 projectData.client = { id: projectData.client };
-
+            if (projectData.status)
+                projectData.status = { id: projectData.status };
             const project = await this.projectRepository.save(await this.projectRepository.create(projectData))
             return project;
         } catch (error) {
@@ -34,11 +35,16 @@ export class ProjectService {
             throw error;
         }
     }
-    async update(id: string, projectData: Partial<UpdateProjectDto>, currentUser: UserEntity | null = null) {
+    async update(id: string, data: Partial<UpdateProjectDto>, currentUser: UserEntity | null = null) {
+        const projectData: any = data;
+        if (currentUser && currentUser.id) {
+            projectData['updatedBy'] = currentUser;
+        }
+        if (projectData.client)
+            projectData.client = { id: projectData.client };
+        if (projectData.status)
+            projectData.status = { id: projectData.status };
         try {
-            if (currentUser && currentUser.id) {
-                projectData['updatedBy'] = currentUser;
-            }
             let project = await this.projectRepository.findOne({ where: { id } }) || {};
             Object.keys(projectData).map(key => {
                 project[key] = projectData[key];
@@ -54,13 +60,13 @@ export class ProjectService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.projectRepository.find(filter);
+            const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.projectRepository.find({ where: filter, relations: relations || [], select });
             return projects;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -70,10 +76,9 @@ export class ProjectService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const project = await this.projectRepository.findOneBy({ id });
+            const project = await this.projectRepository.findOne({ where: { id }, relations });
             return project;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -82,9 +87,10 @@ export class ProjectService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const project = await this.projectRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const project = await this.projectRepository.findOne({ where: filter, relations: relations || [] });
             return project;
         } catch (error) {
             if (error.name == 'ValidationError') {

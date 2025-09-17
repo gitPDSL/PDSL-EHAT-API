@@ -16,15 +16,13 @@ export class TimesheetService {
         try {
             const timesheetData: any = data;
             if (currentUser && currentUser.id) {
-                timesheetData['updatedBy'] = currentUser;
+                timesheetData['createdBy'] = currentUser;
             }
-            if (timesheetData.projectUser)
-                timesheetData.projectUser = { id: timesheetData.projectUser };
             if (timesheetData.status)
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
-
+            console.log(timesheetData)
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
         } catch (error) {
@@ -38,11 +36,17 @@ export class TimesheetService {
             throw error;
         }
     }
-    async update(id: string, timesheetData: Partial<UpdateTimesheetDto>, currentUser: UserEntity | null = null) {
+    async update(id: string, data: Partial<UpdateTimesheetDto>, currentUser: UserEntity | null = null) {
+        const timesheetData: any = data;
+        if (currentUser && currentUser.id) {
+            timesheetData['updatedBy'] = currentUser;
+        }
+        if (timesheetData.status)
+            timesheetData.status = { id: timesheetData.status };
+        if (timesheetData.approvedBy)
+            timesheetData.approvedBy = { id: timesheetData.approvedBy };
         try {
-            if (currentUser && currentUser.id) {
-                timesheetData['updatedBy'] = currentUser;
-            }
+
             let timesheet = await this.timesheetRepository.findOne({ where: { id } }) || {};
             Object.keys(timesheetData).map(key => {
                 timesheet[key] = timesheetData[key];
@@ -58,13 +62,13 @@ export class TimesheetService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const timesheets = page ? await this.timesheetRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.timesheetRepository.find(filter);
+            const timesheets = page ? await this.timesheetRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.timesheetRepository.find({ where: filter, relations: relations || [], select });
             return timesheets;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -74,10 +78,9 @@ export class TimesheetService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const timesheet = await this.timesheetRepository.findOneBy({ id });
+            const timesheet = await this.timesheetRepository.findOne({ where: { id }, relations: relations });
             return timesheet;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -86,9 +89,10 @@ export class TimesheetService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>, selectFields: string = '') {
         try {
-            const timesheet = await this.timesheetRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const timesheet = await this.timesheetRepository.findOne({ where: filter, relations: relations || [] });
             return timesheet;
         } catch (error) {
             if (error.name == 'ValidationError') {

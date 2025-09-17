@@ -5,6 +5,7 @@ import { CreateProjectUserDto, PartialCreateProjectUserDto, UpdateProjectUserDto
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
+import { In } from 'typeorm';
 
 @Controller('project-users')
 export class ProjectUsersController {
@@ -16,14 +17,24 @@ export class ProjectUsersController {
     @ApiBody({ type: CreateProjectUserDto })
     @ApiResponseWrapper(ProjectUserEntity)
     @Post()
-    create(@Req() req: Request, @Body() createProjectUserDto: CreateProjectUserDto, @Ip() ip: string): Promise<any> {
-        return this.projectUserService.create(createProjectUserDto, req['user']);
+    async create(@Req() req: Request, @Body() createProjectUserDto: CreateProjectUserDto | CreateProjectUserDto[], @Ip() ip: string): Promise<any> {
+        if (Array.isArray(createProjectUserDto)) {
+            let projectUsers: any = [];
+            for (let data of createProjectUserDto) {
+                let projectUser = await this.projectUserService.create(data, req['user']);
+                projectUsers.push(projectUser);
+            }
+            return projectUsers;
+        } else
+            return this.projectUserService.create(createProjectUserDto, req['user']);
     }
     @ApiOperation({ summary: 'Get project users' })
     @ApiBearerAuth()
     @ApiResponseWrapper(ProjectUserEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.projectUserService.findAll(query);
     }
     @ApiOperation({ summary: 'Get project user' })
@@ -32,25 +43,40 @@ export class ProjectUsersController {
     @Get(':project/:user')
     get(
         @Param('project', ParseUUIDPipe) project: string,
-        @Param('user', ParseUUIDPipe) user: string
+        @Param('user', ParseUUIDPipe) user: string,
+        @Query() query: Record<string, any>
     ): Promise<any> {
-        return this.projectUserService.findById(project, user);
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.projectUserService.findById(project, user, query.relations);
     }
-
+    @Put('bulk-update')
+    async bulkUpdate(
+        @Req() req: Request,
+        @Body() updateUserDto: UpdateProjectUserDto,
+        @Query() query: Record<string, any> = {}
+    ): Promise<any> {
+        if (query.id) {
+            query.id = query.id.split(',');
+            query.id = In(query.id);
+        }
+        return this.projectUserService.bulkUpdate(query, updateUserDto, req['user']);
+    }
     @ApiOperation({ summary: 'Update project user' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectUserDto })
     @ApiResponseWrapper(ProjectUserEntity)
     @Put(':project/:user')
-    update(
+    async update(
         @Req() req: Request,
-        @Param('project', ParseUUIDPipe) project: string,
-        @Param('user', ParseUUIDPipe) user: string,
+        @Param('projectId', ParseUUIDPipe) projectId: string,
+        @Param('userId', ParseUUIDPipe) userId: string,
         @Body() updateProjectUserDto: UpdateProjectUserDto,
         @Ip() ip: string
     ): Promise<any> {
-        return this.projectUserService.update(project, user, updateProjectUserDto, req['user']);
+        return this.projectUserService.update(projectId, userId, updateProjectUserDto, req['user']);
     }
+
 
     @ApiOperation({ summary: 'Delete project user' })
     @ApiBearerAuth()

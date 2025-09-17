@@ -4,8 +4,10 @@ import { UserEntity } from "src/database/postgres/entities/user.entity";
 
 export class CreateTimesheetDto {
     @ApiProperty({ description: 'Id of project' })
+    @IsString()
     projectId: string;
     @ApiProperty({ description: 'Id of project user' })
+    @IsString()
     userId: string;
     @ApiProperty()
     @IsInt()

@@ -23,15 +23,19 @@ export class OtpsController {
     @ApiBearerAuth()
     @ApiResponseWrapper(OtpEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.otpService.findAll(query);
     }
     @ApiOperation({ summary: 'Get otp' })
     @ApiBearerAuth()
     @ApiResponseWrapper(OtpEntity)
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        return this.otpService.findById(id);
+    get(@Query() query: Record<string, any>, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.otpService.findById(id, query.relations);
     }
 
     @ApiOperation({ summary: 'Update otp' })

@@ -23,15 +23,19 @@ export class RolesController {
     @ApiBearerAuth()
     @ApiResponseWrapper(RoleEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.roleService.findAll(query);
     }
     @ApiOperation({ summary: 'Get role' })
     @ApiBearerAuth()
     @ApiResponseWrapper(RoleEntity)
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        return this.roleService.findById(id);
+    get(@Query() query: Record<string, any>, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.roleService.findById(id, query.relations);
     }
 
     @ApiOperation({ summary: 'Update role' })

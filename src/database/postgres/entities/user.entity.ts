@@ -85,6 +85,7 @@ export class UserEntity {
     refreshToken: string | null
 
     // Reverse relation for manager → subordinates
+    @OneToMany(() => UserEntity, (user) => user.manager)
     subordinates: UserEntity[];
 
     @ManyToMany(() => ProjectEntity, (project) => project.users)

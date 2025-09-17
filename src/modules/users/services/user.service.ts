@@ -65,7 +65,6 @@ export class UserService {
                 userData.department = { id: userData.department };
             const user = await this.userRepository.create(userData);
             const newUser: any = await this.userRepository.save(user)
-            console.log(newUser)
             if (newUser.status == ACCOUNT_STATUS.PENDING)
                 await this.sendVerificationMail(newUser);
             return user;
@@ -158,13 +157,13 @@ export class UserService {
             return []
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const users = page ? await this.userRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: ['department', 'role', 'manager'] }) : await this.userRepository.find({ where: filter, relations: ['department', 'role', 'manager'] });
+            const users = page ? await this.userRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations }) : await this.userRepository.find({ where: filter, relations: relations });
             return users;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -174,10 +173,10 @@ export class UserService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, refreshToken: boolean = false, relations: string[] = []) {
         try {
             // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const user = await this.userRepository.findOneBy({ id });
+            const user = await this.userRepository.findOne({ where: { id }, relations: relations });
             return user;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -186,9 +185,10 @@ export class UserService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>, selectFields: string = '') {
         try {
-            const user = await this.userRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const user = await this.userRepository.findOne({ where: filter, relations: relations || [] });
             return user;
         } catch (error) {
             if (error.name == 'ValidationError') {

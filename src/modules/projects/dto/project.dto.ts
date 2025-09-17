@@ -1,7 +1,5 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
 import { IsDateString, IsInt, IsOptional, IsString } from "class-validator";
-import { ClientEntity } from "src/database/postgres/entities/client.entity";
-import { ProjectStatus } from "src/database/postgres/entities/project.entity";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
 export class CreateProjectDto {
@@ -25,7 +23,7 @@ export class CreateProjectDto {
     completedAt?: Date;
     @ApiProperty()
     @IsOptional()
-    status?: ProjectStatus;
+    status?: string;
     @ApiProperty()
     @IsDateString()
     @IsOptional()

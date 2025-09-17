@@ -25,15 +25,19 @@ export class DepartmentsController {
     @ApiBearerAuth()
     @ApiResponseWrapper(DepartmentEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.departmentService.findAll(query);
     }
     @ApiOperation({ summary: 'Get department' })
     @ApiBearerAuth()
     @ApiResponseWrapper(DepartmentEntity)
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        return this.departmentService.findById(id);
+    get(@Query() query: Record<string, any>, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.departmentService.findById(id, query.relations);
     }
 
     @ApiOperation({ summary: 'Update department' })
@@ -44,7 +48,7 @@ export class DepartmentsController {
     async update(@Req() req: Request,
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateDepartmentDto: UpdateDepartmentDto,
-        @Query() query: any): Promise<any> {
+        @Query() query: Record<string, any>): Promise<any> {
         if (id && query.userUpdate)
             // remove department from all user
             try {

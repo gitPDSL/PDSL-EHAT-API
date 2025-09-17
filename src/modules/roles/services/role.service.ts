@@ -49,13 +49,13 @@ export class RoleService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const roles = page ? await this.roleRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.roleRepository.find({ where: filter });
+            const roles = page ? await this.roleRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.roleRepository.find({ where: filter, relations: relations || [], select });
             return roles;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -65,10 +65,9 @@ export class RoleService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const role = await this.roleRepository.findOneBy({ id });
+            const role = await this.roleRepository.findOne({ where: { id }, relations });
             return role;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -77,9 +76,10 @@ export class RoleService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const role = await this.roleRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const role = await this.roleRepository.findOne({ where: filter, relations: relations || [] });
             return role;
         } catch (error) {
             if (error.name == 'ValidationError') {

@@ -35,21 +35,27 @@ export class UsersController {
     @ApiBearerAuth()
     @ApiResponseWrapper(UserEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (!query.relations)
+            query.relations = ['department', 'role', 'manager']
+        else
+            query.relations = query.relations.split(',').filter(a => a)
         return this.userService.findAll(query);
     }
     @ApiOperation({ summary: 'Get user' })
     @ApiBearerAuth()
     @ApiResponseWrapper(UserEntity)
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        return this.userService.findById(id);
+    get(@Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.userService.findById(id, false, query.relations || []);
     }
     @Put('bulk-update')
     async bulkUpdate(
         @Req() req: Request,
         @Body() updateUserDto: UpdateUserDto,
-        @Query() query: any = {}
+        @Query() query: Record<string, any> = {}
     ): Promise<any> {
         if (query.id) {
             query.id = query.id.split(',');

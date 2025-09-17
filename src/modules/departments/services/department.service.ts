@@ -51,15 +51,15 @@ export class DepartmentService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
             const departments = page ? await this.departmentRepository.find({
-                where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: ['users']
-            }) : await this.departmentRepository.find({ where: filter, relations: ['users'] });
+                where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || []
+            }) : await this.departmentRepository.find({ where: filter, relations: relations || [], select });
             // console.log(departments)
             return departments;
         } catch (error) {
@@ -70,10 +70,9 @@ export class DepartmentService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const department = await this.departmentRepository.findOneBy({ id });
+            const department = await this.departmentRepository.findOne({ where: { id }, relations });
             return department;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -82,9 +81,10 @@ export class DepartmentService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>, selectFields: string = '') {
         try {
-            const department = await this.departmentRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const department = await this.departmentRepository.findOne({ where: filter, relations });
             return department;
         } catch (error) {
             if (error.name == 'ValidationError') {

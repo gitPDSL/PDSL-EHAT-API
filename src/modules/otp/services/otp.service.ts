@@ -49,9 +49,13 @@ export class OtpService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const otps = await this.otpRepository.find(query);
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const otps = page ? await this.otpRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.otpRepository.find({ where: filter, relations: relations || [], select });
             return otps;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -61,10 +65,9 @@ export class OtpService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const otp = await this.otpRepository.findOneBy({ id });
+            const otp = await this.otpRepository.findOne({ where: { id }, relations });
             return otp;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -73,9 +76,10 @@ export class OtpService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const otp = await this.otpRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const otp = await this.otpRepository.findOne({ where: filter, relations: relations || [] });
             return otp;
         } catch (error) {
             if (error.name == 'ValidationError') {

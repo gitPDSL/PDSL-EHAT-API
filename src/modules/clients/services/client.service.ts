@@ -49,13 +49,13 @@ export class ClientService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const clients = page ? await this.clientRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit }) : await this.clientRepository.find(filter);
+            const clients = page ? await this.clientRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.clientRepository.find({ where: filter, relations: relations || [], select });
             return clients;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -65,10 +65,9 @@ export class ClientService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const client = await this.clientRepository.findOneBy({ id });
+            const client = await this.clientRepository.findOne({ where: { id }, relations });
             return client;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -77,9 +76,10 @@ export class ClientService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const client = await this.clientRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const client = await this.clientRepository.findOne({ where: filter, relations: relations || [] });
             return client;
         } catch (error) {
             if (error.name == 'ValidationError') {

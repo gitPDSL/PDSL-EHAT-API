@@ -16,7 +16,7 @@ export class AuthMiddleware implements NestMiddleware {
         // console.log('Verifying JWT token:', token);
         // Verify the token using the secret for access tokens
         const decoded: any = await this.jwtService.verifyAsync(token);
-        console.log(decoded, new Date(decoded.exp * 1000), new Date())
+        // console.log(decoded, new Date(decoded.exp * 1000), new Date())
         req['user'] = await this.userService.findById(decoded.sub);
       } catch (e) {
         try {

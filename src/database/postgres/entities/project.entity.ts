@@ -6,13 +6,6 @@ import { ApiProperty } from "@nestjs/swagger";
 import { TimesheetEntity } from "./timesheet.entity";
 import { ProjectStatusEntity } from "./project-status.entity";
 
-export enum ProjectStatus {
-    // Define enum values that correspond to your PostgreSQL enum `public.project_status`
-    ACTIVE = 'active',
-    COMPLETED = 'completed',
-    ONHOLD = 'on_hold',
-    // Add other statuses as needed
-}
 @Entity('projects')
 export class ProjectEntity {
     @ApiProperty()
@@ -45,10 +38,10 @@ export class ProjectEntity {
     startedAt: Date;
 
     @ApiProperty()
-    @CreateDateColumn({ type: 'timestamp', name: 'created_at', default: () => 'now()' })
+    @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;
     @ApiProperty()
-    @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', default: () => 'now()' })
+    @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
     @ApiProperty()
     @ManyToOne(() => UserEntity, { nullable: true })
@@ -66,6 +59,9 @@ export class ProjectEntity {
     @OneToMany(() => ProjectUserEntity, (userProject) => userProject.project)
     userProjects: ProjectUserEntity[];
 
-    @OneToMany(() => TimesheetEntity, (projectUser) => projectUser.project)
+    @OneToMany(() => TimesheetEntity, (timesheet) => timesheet.project)
     timesheetProjects: TimesheetEntity[];
+    
+    @OneToMany(() => TimesheetEntity, (timesheet) => timesheet.projectId)
+    timesheets: TimesheetEntity[];
 }

@@ -24,14 +24,18 @@ export class ClientsController {
     @ApiBearerAuth()
     @ApiResponseWrapper(ClientEntity, true)
     @Get()
-    getAll(@Query() query: any): Promise<any> {
+    getAll(@Query() query: Record<string, any>): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
         return this.clientService.findAll(query);
     }
     @ApiOperation({ summary: 'Get client' })
     @ApiBearerAuth()
     @Get(':id')
-    get(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        return this.clientService.findById(id);
+    get(@Query() query: Record<string, any>, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        if (query.relations)
+            query.relations = query.relations.split(',').filter(a => a);
+        return this.clientService.findById(id, query.relations);
     }
 
     @ApiOperation({ summary: 'Update client' })

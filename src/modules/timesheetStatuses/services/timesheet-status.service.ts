@@ -49,9 +49,13 @@ export class TimesheetStatusService {
             throw error;
         }
     }
-    async findAll(query: any = {}) {
+    async findAll(query: Record<string, any> = {}) {
         try {
-            const timesheetStatuses = await this.timesheetStatusRepository.find(query);
+            const { page, limit, sortBy, order, relations, select, ...filter } = query;
+            const sortOrder = {};
+            if (sortBy)
+                sortOrder[sortBy] = order;
+            const timesheetStatuses = page ? await this.timesheetStatusRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.timesheetStatusRepository.find({ where: filter, relations: relations || [], select });
             return timesheetStatuses;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -61,10 +65,9 @@ export class TimesheetStatusService {
         }
     }
 
-    async findById(id: string, refreshToken: boolean = false) {
+    async findById(id: string, relations: string[] = []) {
         try {
-            // let selectFields: string = 'firstName lastNeme email accountType status createdAt updatedAt' + (refreshToken ? ' refreshToken' : '');
-            const timesheetStatus = await this.timesheetStatusRepository.findOneBy({ id });
+            const timesheetStatus = await this.timesheetStatusRepository.findOne({ where: { id }, relations });
             return timesheetStatus;
         } catch (error) {
             if (error.name == 'ValidationError') {
@@ -73,9 +76,10 @@ export class TimesheetStatusService {
             throw error;
         }
     }
-    async findOne(query: Object, selectFields: string = '') {
+    async findOne(query: Record<string, any>) {
         try {
-            const timesheetStatus = await this.timesheetStatusRepository.findOne({ where: query });
+            const { relations, ...filter } = query;
+            const timesheetStatus = await this.timesheetStatusRepository.findOne({ where: filter, relations: relations || [] });
             return timesheetStatus;
         } catch (error) {
             if (error.name == 'ValidationError') {
