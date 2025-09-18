@@ -22,7 +22,8 @@ export class PostgresModule {
                             password: configService.get('DATABASE_PASSWORD'),
                             database: configService.get('DATABASE_NAME'),
                             entities: [__dirname + '/**/*.entity{.ts,.js}'],
-                            synchronize: true, // use false in production
+                            synchronize: true, // use false in production,
+                            logging: configService.get<any>('DATABASE_LOG') === 'true' ? true : false
                         }
                     },
                     inject: [ConfigService]

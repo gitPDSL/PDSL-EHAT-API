@@ -7,5 +7,6 @@ export const DATABASE_CONFIG = registerAs('DATABASE', () => {
         USER: process.env['DATABASE_USER'],
         PASSWORD: process.env['DATABASE_PASSWORD'],
         NAME: process.env['DATABASE_NAME'],
+        LOG: process.env['DATABASE_LOG'],
     };
 })

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { UpdateTimesheetDto } from '../dto/timesheet.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
@@ -64,11 +64,14 @@ export class TimesheetService {
     }
     async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, relations, select, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, $or, ...filter } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const timesheets = page ? await this.timesheetRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.timesheetRepository.find({ where: filter, relations: relations || [], select });
+            if (filter.status) {
+                filter.status = filter.status.includes('!') ? { id: Not(filter.status.replace('!', '')) } : { id: filter.status };
+            }
+            const timesheets = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select });
             return timesheets;
         } catch (error) {
             if (error.name == 'ValidationError') {

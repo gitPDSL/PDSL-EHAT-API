@@ -7,6 +7,7 @@ import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { Between } from 'typeorm';
 import moment from 'moment';
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 // @Controller({ path: 'timesheets', host: ':api.example.com' }) get dynamic host with @PostParams()
 @Controller('timesheets')
 export class TimesheetsController {
@@ -19,7 +20,6 @@ export class TimesheetsController {
     @ApiResponseWrapper(TimesheetEntity)
     @Post()
     create(@Req() req: Request, @Body() createTimesheetDto: CreateTimesheetDto, @Ip() ip: string): Promise<any> {
-        console.log('controller-----------', createTimesheetDto)
         return this.timesheetService.create(createTimesheetDto, req['user']);
     }
     @ApiOperation({ summary: 'Get timesheets' })
@@ -27,16 +27,43 @@ export class TimesheetsController {
     @ApiResponseWrapper(TimesheetEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
-        if (query.relations)
-            query.relations = query.relations.split(',').filter(a => a);
+        console.log('in controller before transform', query)
+        const status = query.status;
+        const relations = query.relations;
+        const weekNumber = query.weekNumber;
+        const or = query['$or'];
+        query = QueryTransformTypeorm(query);
+        if (status)
+            query.status = status;
+        if (weekNumber) {
+            let weeks = weekNumber.split(',');
+            if (weeks.length > 1)
+                query.weekNumber = Between(weeks[0], weeks[1]);
+            else
+                query.weekNumber = weekNumber;
+        }
+        if (relations)
+            query.relations = relations.split(',').filter(a => a);
         if (query.date) {
-            let dates = query.date.split(',').filter(a => a);
+            let dates = query.date.filter(a => a);
             if (dates.length === 2)
                 query.date = Between(new Date(dates[0]), new Date(dates[1]))
             else
                 query.date = Between(new Date(moment(dates[0]).startOf('day').toISOString()), new Date(moment(dates[0]).endOf('day').toISOString()))
         }
-        // console.log(query)
+        if (or) {
+            let condts = or.split('|').filter(a => a);
+            let orQuery = {};
+            for (let c of condts) {
+                let spc = c.split(':').filter(a => a);
+                if (spc.length > 1) {
+                    let spcs = spc[1].split(',')
+                    orQuery[spc[0]] = spc[1].includes(',') ? Between(Number(spcs[0]), Number(spcs[1])) : spc[0] == 'year' || spc[0] == 'weekNumber' ? Number(spc[1]) : spc[1];
+                }
+            }
+            query['$or'] = orQuery;
+        }
+        console.log('in controller', query)
         return this.timesheetService.findAll(query);
     }
     @ApiOperation({ summary: 'Get timesheet' })
