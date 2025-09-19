@@ -11,6 +11,8 @@ export const TimesheetStatusSeeds = async () => {
         const timesheetStatuses = [
             { id: "PENDING", name: "Pending", description: "Pending" },
             { id: "APPROVED", name: "Approved", description: "Approved" },
+            { id: "SUBMITTED", name: "Submitted", description: "Submitted" },
+            { id: "REJECTED", name: "Rejected", description: "Rejected" },
         ];
 
         // Optional: Check if records exist to avoid duplicates

@@ -32,6 +32,7 @@ export class TimesheetsController {
         const relations = query.relations;
         const weekNumber = query.weekNumber;
         const or = query['$or'];
+        const date = query.date;
         query = QueryTransformTypeorm(query);
         if (status)
             query.status = status;
@@ -42,10 +43,21 @@ export class TimesheetsController {
             else
                 query.weekNumber = weekNumber;
         }
-        if (relations)
-            query.relations = relations.split(',').filter(a => a);
-        if (query.date) {
-            let dates = query.date.filter(a => a);
+        if (relations) {
+            const deepRelations = {};
+            relations.split(',').filter(a => a).map((a: any) => {
+                if (a.includes('.')) {
+                    let deepRl = a.split('.').filter(i => i);
+                    deepRelations[deepRl[0]] = deepRelations[deepRl[0]] || {};
+                    deepRelations[deepRl[0]][deepRl[1]] = true;
+                } else
+                    deepRelations[a] = true;
+                return a;
+            });
+            query.relations = deepRelations;
+        }
+        if (date) {
+            let dates = date.split(',').filter(a => a);
             if (dates.length === 2)
                 query.date = Between(new Date(dates[0]), new Date(dates[1]))
             else
@@ -63,7 +75,7 @@ export class TimesheetsController {
             }
             query['$or'] = orQuery;
         }
-        // console.log('in controller', query)
+        console.log('in controller', query)
         return this.timesheetService.findAll(query);
     }
     @ApiOperation({ summary: 'Get timesheet' })
