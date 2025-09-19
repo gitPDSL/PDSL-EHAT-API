@@ -5,8 +5,8 @@ import { CreateClientDto, PartialCreateClientDto, UpdateClientDto } from './dto/
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { ClientEntity } from 'src/database/postgres/entities/client.entity';
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 
-// @Controller({ path: 'clients', host: ':api.example.com' }) get dynamic host with @PostParams()
 @Controller('clients')
 export class ClientsController {
     constructor(
@@ -25,6 +25,7 @@ export class ClientsController {
     @ApiResponseWrapper(ClientEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
             query.relations = query.relations.split(',').filter(a => a);
         return this.clientService.findAll(query);

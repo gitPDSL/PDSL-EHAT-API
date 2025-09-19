@@ -10,6 +10,8 @@ import { OptionalPasswordValidationPipe } from 'src/pipes/password-validation.pi
 import { In } from 'typeorm';
 import { TimesheetService } from '../timesheets/services/timesheet.service';
 import { ProjectUserService } from '../projectUsers/services/project-user.service';
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
+
 @Controller('users')
 export class UsersController {
     constructor(
@@ -36,10 +38,11 @@ export class UsersController {
     @ApiResponseWrapper(UserEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
+
         if (!query.relations)
             query.relations = ['department', 'role', 'manager']
-        else
-            query.relations = query.relations.split(',').filter(a => a)
+
         return this.userService.findAll(query);
     }
     @ApiOperation({ summary: 'Get user' })

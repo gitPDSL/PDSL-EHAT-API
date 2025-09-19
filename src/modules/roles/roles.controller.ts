@@ -5,7 +5,7 @@ import { CreateRoleDto, PartialCreateRoleDto, UpdateRoleDto } from './dto/role.d
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { RoleEntity } from 'src/database/postgres/entities/role.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
-// @Controller({ path: 'roles', host: ':api.example.com' }) get dynamic host with @PostParams()
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 @Controller('roles')
 export class RolesController {
     constructor(
@@ -24,6 +24,7 @@ export class RolesController {
     @ApiResponseWrapper(RoleEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
             query.relations = query.relations.split(',').filter(a => a);
         return this.roleService.findAll(query);

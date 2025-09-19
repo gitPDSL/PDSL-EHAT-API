@@ -27,7 +27,7 @@ export class TimesheetsController {
     @ApiResponseWrapper(TimesheetEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
-        console.log('in controller before transform', query)
+        // console.log('in controller before transform', query)
         const status = query.status;
         const relations = query.relations;
         const weekNumber = query.weekNumber;
@@ -63,7 +63,7 @@ export class TimesheetsController {
             }
             query['$or'] = orQuery;
         }
-        console.log('in controller', query)
+        // console.log('in controller', query)
         return this.timesheetService.findAll(query);
     }
     @ApiOperation({ summary: 'Get timesheet' })

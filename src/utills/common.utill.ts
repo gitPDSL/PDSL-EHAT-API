@@ -6,7 +6,7 @@ export const QueryTransformTypeorm = (query: Record<string, any>, acc: any = nul
         if (query[key].includes('||'))
             acc[key] = query[key].split('||');
         else if (query[key].includes(','))
-            acc[key] = In(query[key].split(','));
+            acc[key] = key == 'select' || key == 'relations' ? query[key].split(',') : In(query[key].split(','));
         else if (query[key].includes('>='))
             acc[key] = MoreThanOrEqual(Number(query[key].replace('>=', '')));
         else if (query[key].includes('>'))

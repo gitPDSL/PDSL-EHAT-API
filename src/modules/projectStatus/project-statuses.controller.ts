@@ -5,7 +5,7 @@ import { CreateProjectStatusDto, PartialCreateProjectStatusDto, UpdateProjectSta
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProjectStatusEntity } from 'src/database/postgres/entities/project-status.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
-// @Controller({ path: 'Project-statuses', host: ':api.example.com' }) get dynamic host with @PostParams()\
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 @ApiTags('Project Statuses')
 @Controller('project-statuses')
 export class ProjectStatusesController {
@@ -25,6 +25,7 @@ export class ProjectStatusesController {
     @ApiResponseWrapper(ProjectStatusEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
             query.relations = query.relations.split(',').filter(a => a);
         return this.ProjectStatusService.findAll(query);

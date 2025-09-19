@@ -5,7 +5,8 @@ import { CreateOtpDto, PartialCreateOtpDto, UpdateOtpDto } from './dto/otp.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { OtpEntity } from 'src/database/postgres/entities/otp.entity';
-// @Controller({ path: 'otps', host: ':api.example.com' }) get dynamic host with @PostParams()
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
+
 @Controller('otp')
 export class OtpsController {
     constructor(
@@ -24,6 +25,7 @@ export class OtpsController {
     @ApiResponseWrapper(OtpEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
             query.relations = query.relations.split(',').filter(a => a);
         return this.otpService.findAll(query);

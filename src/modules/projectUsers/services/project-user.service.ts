@@ -100,7 +100,7 @@ export class ProjectUserService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select });
+            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return projectUsers;
         } catch (error) {
             if (error.name == 'ValidationError') {

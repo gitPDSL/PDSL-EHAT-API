@@ -55,7 +55,7 @@ export class ProjectStatusService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projectStatuses = page ? await this.projectStatusRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.projectStatusRepository.find({ where: filter, relations: relations || [], select });
+            const projectStatuses = page ? await this.projectStatusRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectStatusRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return projectStatuses;
         } catch (error) {
             if (error.name == 'ValidationError') {

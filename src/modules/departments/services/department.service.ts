@@ -59,7 +59,7 @@ export class DepartmentService {
                 sortOrder[sortBy] = order;
             const departments = page ? await this.departmentRepository.find({
                 where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || []
-            }) : await this.departmentRepository.find({ where: filter, relations: relations || [], select });
+            }) : await this.departmentRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             // console.log(departments)
             return departments;
         } catch (error) {

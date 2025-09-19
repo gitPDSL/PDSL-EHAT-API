@@ -55,7 +55,7 @@ export class RoleService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const roles = page ? await this.roleRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.roleRepository.find({ where: filter, relations: relations || [], select });
+            const roles = page ? await this.roleRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.roleRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return roles;
         } catch (error) {
             if (error.name == 'ValidationError') {

@@ -55,7 +55,7 @@ export class OtpService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const otps = page ? await this.otpRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.otpRepository.find({ where: filter, relations: relations || [], select });
+            const otps = page ? await this.otpRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.otpRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return otps;
         } catch (error) {
             if (error.name == 'ValidationError') {

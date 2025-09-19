@@ -18,10 +18,20 @@ export class MailService implements OnModuleInit {
             console.log('❌ SMTP connection failed:', error);
         }
     }
-    async sendHtmlEmail(to: string, subject: string, htmlContent: string) {
-        await this.mailerService.sendMail({
+
+    async sendEmail(to: string, subject: string = 'Test email', text: string = 'Test email') {
+        return this.mailerService.sendMail({
             to,
             subject,
+            template: 'general',
+            context: { message: text, appName: this.configService.get('APP_NAME') }
+        });
+    }
+    async sendHtmlEmail(to: string, subject: string, text: string = '', htmlContent: string = '') {
+        return this.mailerService.sendMail({
+            to,
+            subject,
+            text,
             html: htmlContent,
         });
     }

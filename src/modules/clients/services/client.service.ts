@@ -55,7 +55,7 @@ export class ClientService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const clients = page ? await this.clientRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select }) : await this.clientRepository.find({ where: filter, relations: relations || [], select });
+            const clients = page ? await this.clientRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.clientRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return clients;
         } catch (error) {
             if (error.name == 'ValidationError') {

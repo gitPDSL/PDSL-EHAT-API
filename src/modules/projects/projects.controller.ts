@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { ProjectUserService } from '../projectUsers/services/project-user.service';
-// @Controller({ path: 'projects', host: ':api.example.com' }) get dynamic host with @PostParams()
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 @Controller('projects')
 export class ProjectsController {
     constructor(
@@ -27,8 +27,9 @@ export class ProjectsController {
     @ApiResponseWrapper(ProjectEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
-            query.relations = query.relations.split(',').filter(a => a);
+            query.relations = query.relations.filter(a => a);
         return this.projectService.findAll(query);
     }
     @ApiOperation({ summary: 'Get project' })
@@ -36,8 +37,9 @@ export class ProjectsController {
     @ApiResponseWrapper(ProjectEntity)
     @Get(':id')
     get(@Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
-            query.relations = query.relations.split(',').filter(a => a);
+            query.relations = query.relations.filter(a => a);
         return this.projectService.findById(id);
     }
 

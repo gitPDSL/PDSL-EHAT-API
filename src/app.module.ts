@@ -18,6 +18,7 @@ import { TimesheetsModule } from './modules/timesheets/timesheets.module';
 import { TimesheetStatusesModule } from './modules/timesheetStatuses/timesheet-statuses.module';
 import { ProjectUsersModule } from './modules/projectUsers/project-users.module';
 import { ProjectStatusesModule } from './modules/projectStatus/project-statuses.module';
+import { SendMailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
@@ -46,7 +47,7 @@ import { ProjectStatusesModule } from './modules/projectStatus/project-statuses.
     TimesheetStatusesModule,
     TimesheetsModule,
     UsersModule,
-
+    SendMailModule
   ],
   controllers: [],
   providers: [

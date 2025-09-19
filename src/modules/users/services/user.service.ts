@@ -159,12 +159,17 @@ export class UserService {
     }
     async findAll(query: Record<string, any> = {}) {
         try {
-            const { page, limit, sortBy, order, relations, select, ...filter } = query;
+            const { page, limit, sortBy, order, relations, select, password, ...filter
+            } = query;
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const users = page ? await this.userRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations }) : await this.userRepository.find({ where: filter, relations: relations });
-            return users;
+            // console.log(select, { where: filter, relations: relations || [], select })
+            const users = page ? await this.userRepository.find({
+                where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select
+            }) : await this.userRepository.find({ where: filter, relations: relations || [], select });
+            // console.log(users)
+            return password ? users.filter((a: any) => bcrypt.compareSync(password, a.passwordHash)) : users;
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
@@ -188,6 +193,10 @@ export class UserService {
     async findOne(query: Record<string, any>, selectFields: string = '') {
         try {
             const { relations, ...filter } = query;
+            if (filter.password) {
+                filter['passwordHash'] = await bcrypt.hash(filter.password, 10);
+                delete filter.password;
+            }
             const user = await this.userRepository.findOne({ where: filter, relations: relations || [] });
             return user;
         } catch (error) {

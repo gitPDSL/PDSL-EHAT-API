@@ -46,7 +46,7 @@ export class MailModule {
                                 dir: join(__dirname, 'templates'),
                                 adapter: new HandlebarsAdapter(),
                                 options: {
-                                    strict: true,
+                                    strict: false,
                                 },
                             },
                         };

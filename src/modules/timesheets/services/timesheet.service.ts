@@ -71,7 +71,7 @@ export class TimesheetService {
             if (filter.status) {
                 filter.status = filter.status.includes('!') ? { id: Not(filter.status.replace('!', '')) } : { id: filter.status };
             }
-            const timesheets = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select });
+            const timesheets = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select:select?._value||select });
             return timesheets;
         } catch (error) {
             if (error.name == 'ValidationError') {

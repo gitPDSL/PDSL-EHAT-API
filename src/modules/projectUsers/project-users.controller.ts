@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { In } from 'typeorm';
+import { QueryTransformTypeorm } from 'src/utills/common.utill';
 
 @Controller('project-users')
 export class ProjectUsersController {
@@ -33,6 +34,7 @@ export class ProjectUsersController {
     @ApiResponseWrapper(ProjectUserEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        query = QueryTransformTypeorm(query);
         if (query.relations)
             query.relations = query.relations.split(',').filter(a => a);
         return this.projectUserService.findAll(query);
