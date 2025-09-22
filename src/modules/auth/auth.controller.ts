@@ -79,7 +79,10 @@ export class AuthController {
     @ApiBearerAuth()
     @Get()
     getLoggedUser(@Req() req: Request): Promise<UserEntity | any> {
-        return this.authService.userService.findById(req['user'].id);
+        const relations = ['role']
+        if (req['user'].role.id === 'MANAGER')
+            relations.push('subordinates')
+        return this.authService.userService.findById(req['user'].id, false, relations);
     }
     @ApiOperation({ summary: 'Refresh token', description: 'Need to pass refresh token in Authorization' })
     @ApiBearerAuth()

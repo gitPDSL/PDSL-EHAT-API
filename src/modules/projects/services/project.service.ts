@@ -66,6 +66,7 @@ export class ProjectService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
+            console.log(filter)
             const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
             return projects;
         } catch (error) {
