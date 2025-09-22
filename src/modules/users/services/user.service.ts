@@ -164,6 +164,12 @@ export class UserService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
+            if (filter.role)
+                filter.role = { id: filter.role };
+            if (filter.manager)
+                filter.manager = { id: filter.manager };
+            if (filter.department)
+                filter.department = { id: filter.department };
             // console.log(select, { where: filter, relations: relations || [], select })
             const users = page ? await this.userRepository.find({
                 where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select
@@ -197,6 +203,12 @@ export class UserService {
                 filter['passwordHash'] = await bcrypt.hash(filter.password, 10);
                 delete filter.password;
             }
+            if (filter.role)
+                filter.role = { id: filter.role };
+            if (filter.manager)
+                filter.manager = { id: filter.manager };
+            if (filter.department)
+                filter.department = { id: filter.department };
             const user = await this.userRepository.findOne({ where: filter, relations: relations || [] });
             return user;
         } catch (error) {

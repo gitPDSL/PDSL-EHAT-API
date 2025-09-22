@@ -48,8 +48,11 @@ export class TimesheetsController {
             relations.split(',').filter(a => a).map((a: any) => {
                 if (a.includes('.')) {
                     let deepRl = a.split('.').filter(i => i);
-                    deepRelations[deepRl[0]] = deepRelations[deepRl[0]] || {};
-                    deepRelations[deepRl[0]][deepRl[1]] = true;
+                    let deepRl1 = deepRl[1].split(':').filter(i => i);
+                    for (let rls of deepRl1) {
+                        deepRelations[deepRl[0]] = deepRelations[deepRl[0]] || {};
+                        deepRelations[deepRl[0]][rls] = true;
+                    }
                 } else
                     deepRelations[a] = true;
                 return a;
