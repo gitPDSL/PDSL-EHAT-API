@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { Not, Repository } from 'typeorm';
@@ -22,7 +22,7 @@ export class TimesheetService {
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
-            console.log(timesheetData)
+            // console.log(timesheetData)
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
         } catch (error) {
@@ -62,6 +62,43 @@ export class TimesheetService {
             throw error;
         }
     }
+    async bulkUpdate(
+        query: Record<string, any> = {},
+        data: Partial<UpdateTimesheetDto>,
+        currentUser: UserEntity | any
+    ): Promise<UserEntity[] | UserEntity> {
+        if (!query || Object.keys(query).length === 0 || Array.isArray(query)) {
+            throw new BadRequestException('Valid query object is required when no IDs are provided.');
+        }
+        const timesheetData: any = data;
+        // console.log('-------------------', query, userData)
+        try {
+            const timesheets = await this.timesheetRepository.find({ where: query });
+            // console.log('====================', timesheets)
+            if (!timesheets) throw new NotFoundException('No user found matching the query.');
+            let timesheetList: any = [];
+            if (currentUser && currentUser.id) {
+                timesheetData['updatedBy'] = currentUser;
+            }
+            if (timesheetData.status)
+                timesheetData.status = { id: timesheetData.status };
+            if (timesheetData.approvedBy)
+                timesheetData.approvedBy = { id: timesheetData.approvedBy };
+            for (let timesheet of timesheets) {
+                Object.assign(timesheet, {
+                    ...timesheetData,
+                    updatedBy: currentUser,
+                });
+                // console.log(user)
+                timesheet = await this.timesheetRepository.save(timesheet);
+                timesheetList.push(timesheet);
+            }
+            return timesheetList;
+        } catch (err) {
+            console.log('--=--==-', err);
+            return []
+        }
+    }
     async findAll(query: Record<string, any> = {}) {
         try {
             const { page, limit, sortBy, order, relations, select, $or, ...filter } = query;
@@ -71,7 +108,7 @@ export class TimesheetService {
             if (filter.status) {
                 filter.status = filter.status.includes('!') ? { id: Not(filter.status.replace('!', '')) } : { id: filter.status };
             }
-            const timesheets = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select:select?._value||select });
+            const timesheets = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select: select?._value || select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select: select?._value || select });
             return timesheets;
         } catch (error) {
             if (error.name == 'ValidationError') {

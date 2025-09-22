@@ -5,7 +5,7 @@ import { CreateTimesheetDto, PartialCreateTimesheetDto, UpdateTimesheetDto } fro
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
-import { Between } from 'typeorm';
+import { Between, In } from 'typeorm';
 import moment from 'moment';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
 // @Controller({ path: 'timesheets', host: ':api.example.com' }) get dynamic host with @PostParams()
@@ -87,7 +87,22 @@ export class TimesheetsController {
             query.relations = query.relations.split(',').filter(a => a);
         return this.timesheetService.findById(id, query.relations || []);
     }
-
+    @ApiOperation({ summary: 'Update timesheet' })
+    @ApiBearerAuth()
+    @ApiBody({ type: PartialCreateTimesheetDto })
+    @ApiResponseWrapper(TimesheetEntity)
+    @Put('bulk-update')
+    async bulkUpdate(
+        @Req() req: Request,
+        @Body() updateTimesheetDto: UpdateTimesheetDto,
+        @Query() query: Record<string, any> = {}
+    ): Promise<any> {
+        if (query.id) {
+            query.id = query.id.split(',');
+            query.id = In(query.id);
+        }
+        return this.timesheetService.bulkUpdate(query, updateTimesheetDto, req['user']);
+    }
     @ApiOperation({ summary: 'Update timesheet' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateTimesheetDto })

@@ -36,6 +36,10 @@ export class CreateTimesheetDto {
     @ApiProperty()
     @IsString()
     @IsOptional()
+    approvedBy?: string;
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
     rejectionReason?: string;
 
     @ApiProperty()
