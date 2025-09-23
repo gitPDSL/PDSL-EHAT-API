@@ -100,8 +100,18 @@ export class ProjectUserService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projectUsers = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
-            return projectUsers;
+            let projectUsers: any = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select: select?._value || select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select: select?._value || select });
+            return projectUsers.map(entity => {
+                const project = entity.__project__;
+                const user = entity.__user__;
+                delete entity.__project__;
+                delete entity.__user__;
+                return {
+                    ...entity,
+                    ...(project ? { project } : {}),
+                    ...(user ? { user } : {}),
+                };
+            });
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);

@@ -78,7 +78,7 @@ export class TimesheetsController {
             }
             query['$or'] = orQuery;
         }
-        console.log('in controller', query)
+        // console.log('in controller', query)
         return this.timesheetService.findAll(query);
     }
     @ApiOperation({ summary: 'Get timesheet' })
