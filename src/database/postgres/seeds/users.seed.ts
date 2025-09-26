@@ -17,7 +17,7 @@ export const UserSeeds = async () => {
                 "passwordHash": password,
                 "designation": "Admin",
                 "department": null,
-                "role": { id: "ADMIN", name: "Admin User", description: "Admin User" },
+                "role": { id: "SUPER_ADMIN", name: "Super Admin", description: "Super Admin" },
                 "status": ACCOUNT_STATUS.ACTIVE,
                 "manager": null
             }

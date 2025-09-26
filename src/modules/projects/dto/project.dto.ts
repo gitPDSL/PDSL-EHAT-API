@@ -13,6 +13,10 @@ export class CreateProjectDto {
     @IsInt()
     @IsOptional()
     allocatedHours?: number;
+    @ApiProperty({ description: 'id of User' })
+    @IsString()
+    @IsOptional()
+    manager?: string;
     @ApiProperty({ description: 'id of Client' })
     @IsString()
     @IsOptional()

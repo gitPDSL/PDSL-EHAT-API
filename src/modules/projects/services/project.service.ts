@@ -20,6 +20,8 @@ export class ProjectService {
             }
             if (projectData.client)
                 projectData.client = { id: projectData.client };
+            if (projectData.manager)
+                projectData.manager = { id: projectData.manager };
             if (projectData.status)
                 projectData.status = { id: projectData.status };
             const project = await this.projectRepository.save(await this.projectRepository.create(projectData))
@@ -42,6 +44,8 @@ export class ProjectService {
         }
         if (projectData.client)
             projectData.client = { id: projectData.client };
+        if (projectData.manager)
+            projectData.manager = { id: projectData.manager };
         if (projectData.status)
             projectData.status = { id: projectData.status };
         try {
@@ -66,8 +70,10 @@ export class ProjectService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            console.log(filter)
-            const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
+            // console.log('filter-----', filter)
+            if (filter.manager)
+                filter.manager = { id: filter.manager };
+            const projects = page ? await this.projectRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select: select?._value || select }) : await this.projectRepository.find({ where: filter, relations: relations || [], select: select?._value || select });
             return projects;
         } catch (error) {
             if (error.name == 'ValidationError') {

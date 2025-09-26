@@ -25,6 +25,11 @@ export class ProjectEntity {
     @ManyToOne(() => ClientEntity, { nullable: true })
     @JoinColumn({ name: 'client_id' })
     client: ClientEntity;
+    @ApiProperty({ type: () => UserEntity })
+    @Index('idx_projects_manager_id')
+    @ManyToOne(() => UserEntity, { nullable: true })
+    @JoinColumn({ name: 'manager_id' })
+    manager: UserEntity;
     @ApiProperty()
     // @Index('idx_projects_completed_at', { where: '"completed_at" IS NOT NULL' })
     @Column({ type: 'timestamp', name: 'completed_at', nullable: true })
@@ -51,17 +56,15 @@ export class ProjectEntity {
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'updated_by' })
     updatedBy: UserEntity | null;
-
-
+    
     @ManyToMany(() => UserEntity, (user) => user.projects)
     users: UserEntity[];
-
     @OneToMany(() => ProjectUserEntity, (userProject) => userProject.project)
     userProjects: ProjectUserEntity[];
 
     @OneToMany(() => TimesheetEntity, (timesheet) => timesheet.project)
     timesheetProjects: TimesheetEntity[];
-    
+
     @OneToMany(() => TimesheetEntity, (timesheet) => timesheet.projectId)
     timesheets: TimesheetEntity[];
 }

@@ -87,7 +87,6 @@ export class UserEntity {
     // Reverse relation for manager → subordinates
     @OneToMany(() => UserEntity, (user) => user.manager)
     subordinates: UserEntity[];
-
     @ManyToMany(() => ProjectEntity, (project) => project.users)
     @JoinTable({
         name: 'project_users',
@@ -95,10 +94,11 @@ export class UserEntity {
         inverseJoinColumn: { name: 'project_id', referencedColumnName: 'id' },
     })
     projects: ProjectEntity[];
-
     @OneToMany(() => ProjectUserEntity, (projectUser) => projectUser.user)
     projectUsers: ProjectUserEntity[];
     @OneToMany(() => TimesheetEntity, (timesheetUser) => timesheetUser.project)
     timesheetUsers: TimesheetEntity[];
+    @OneToMany(() => ProjectEntity, (project) => project.manager, { lazy: true })
+    managerProjects: ProjectEntity[];
 
 }

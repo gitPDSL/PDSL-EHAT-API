@@ -12,6 +12,7 @@ export const RoleSeeds = async () => {
             { id: "MANAGER", name: "Manager", description: "Manager" },
             { id: "USER", name: "Employee", description: "Employee" },
             { id: "ADMIN", name: "Admin User", description: "Admin User" },
+            { id: "SUPER_ADMIN", name: "Super Admin", description: "Super Admin" },
         ];
 
         // Optional: Insert only if role does not already exist
