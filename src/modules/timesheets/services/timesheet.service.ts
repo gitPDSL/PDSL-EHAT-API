@@ -108,6 +108,14 @@ export class TimesheetService {
             if (filter.status) {
                 filter.status = filter.status.includes('!') ? { id: Not(filter.status.replace('!', '')) } : { id: filter.status };
             }
+            if (filter['project.status']) {
+                filter['project'] = { status: { id: filter['project.status'] } };
+                delete filter['project.status'];
+            }
+            if (filter['project.manager']) {
+                filter['project'] = { manager: { id: filter['project.manager'] } };
+                delete filter['project.manager'];
+            }
             let timesheets: any = page ? await this.timesheetRepository.find({ where: [filter, $or || {}], order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select: select?._value || select, }) : await this.timesheetRepository.find({ where: [filter, $or || {}], relations: relations || [], select: select?._value || select });
             return timesheets.map(entity => {
                 const project = entity.__project__;

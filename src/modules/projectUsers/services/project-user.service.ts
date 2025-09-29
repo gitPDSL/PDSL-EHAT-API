@@ -100,6 +100,10 @@ export class ProjectUserService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
+            if (filter['project.status']) {
+                filter['project'] = { status: { id: filter['project.status'] } };
+                delete filter['project.status'];
+            }
             let projectUsers: any = page ? await this.projectUserRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select: select?._value || select }) : await this.projectUserRepository.find({ where: filter, relations: relations || [], select: select?._value || select });
             return projectUsers.map(entity => {
                 const project = entity.__project__;
