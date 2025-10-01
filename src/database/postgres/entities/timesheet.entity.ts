@@ -46,6 +46,9 @@ export class TimesheetEntity {
   @Column('timestamp', { nullable: true, default: () => 'now()', name: 'submitted_at' })
   submittedAt?: Date;
   @ApiProperty()
+  @Column('text', { nullable: true, name: 'note' })
+  note?: string;
+  @ApiProperty()
   @ManyToOne(() => TimesheetStatusEntity, { nullable: true })
   @JoinColumn({ name: 'status' })
   status?: TimesheetStatusEntity;

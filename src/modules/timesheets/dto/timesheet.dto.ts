@@ -26,6 +26,10 @@ export class CreateTimesheetDto {
     @IsDateString()
     @IsOptional()
     submittedAt?: Date;
+    @ApiProperty()
+    @IsString()
+    @IsOptional()
+    note?: string;
     @ApiProperty({ description: 'Id of timesheet status' })
     @IsOptional()
     status?: string;
