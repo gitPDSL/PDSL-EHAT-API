@@ -32,7 +32,7 @@ export class UserEntity {
     @Column({ type: 'text', name: 'full_name', nullable: true })
     fullName: string | null;
     @ApiProperty()
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: 'text', nullable: true, unique: true })
     email: string | null;
     @ApiProperty()
     @Column({ type: 'text', name: 'password_hash', select: false, nullable: true })
