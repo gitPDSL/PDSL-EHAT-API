@@ -37,7 +37,7 @@ export class UserService {
         const token = await this.jwtService.signAsync({ sub: user.id, email: user.email }, {
             expiresIn: '15m',
         });
-        await this.mailService.sendAccountVerification(user.email, user.fullName, process.env.APP_URL + '/verify/' + token);
+        await this.mailService.sendAccountVerification(user.email, user.fullName, process.env.APP_URL + '/verify/' + token, process.env.APP_URL);
 
     }
     async sendForgotPasswordMail(user: any) {
