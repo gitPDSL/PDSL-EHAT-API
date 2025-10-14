@@ -43,12 +43,12 @@ export class MailService implements OnModuleInit {
             context: { name, verifyLink: link, appName: this.configService.get('APP_NAME'), webUrl },
         });
     }
-    async sendForgotPassword(to: string, name: string, link: string) {
+    async sendForgotPassword(to: string, name: string, link: string, webUrl: string) {
         return this.mailerService.sendMail({
             to,
             subject: 'Reset Your Password',
             template: 'forgot-password', // hbs
-            context: { name, resetLink: link, appName: this.configService.get('APP_NAME') },
+            context: { name, resetLink: link, appName: this.configService.get('APP_NAME'), webUrl },
         });
     }
 }
