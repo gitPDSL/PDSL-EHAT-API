@@ -15,7 +15,7 @@ export class DepartmentService {
     async create(departmentData: Partial<DepartmentEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                departmentData['updatedBy'] = currentUser;
+                departmentData['createdBy'] = currentUser;
             }
             const department = await this.departmentRepository.save(await this.departmentRepository.create(departmentData))
             return department;

@@ -16,7 +16,7 @@ export class ProjectUserService {
         try {
             const projectUserData: any = data;
             if (currentUser && currentUser.id) {
-                projectUserData['updatedBy'] = currentUser;
+                projectUserData['createdBy'] = currentUser;
             }
             if (projectUserData.projectId)
                 projectUserData.projectId = { id: projectUserData.projectId };

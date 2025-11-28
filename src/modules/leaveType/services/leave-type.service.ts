@@ -1,23 +1,23 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProjectStatusEntity } from 'src/database/postgres/entities/project-status.entity';
+import { LeaveTypeEntity } from 'src/database/postgres/entities/leave-type.entity';
 import { Repository } from 'typeorm';
-import { UpdateProjectStatusDto } from '../dto/project-status.dto';
+import { UpdateLeaveTypeDto } from '../dto/leave-type.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()
-export class ProjectStatusService {
+export class LeaveTypeService {
     constructor(
-        @InjectRepository(ProjectStatusEntity) private readonly projectStatusRepository: Repository<ProjectStatusEntity>
+        @InjectRepository(LeaveTypeEntity) private readonly leaveTypeRepository: Repository<LeaveTypeEntity>
     ) {
     }
-    async create(projectStatusData: Partial<ProjectStatusEntity>, currentUser: UserEntity | null = null) {
+    async create(leaveTypeData: Partial<LeaveTypeEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                projectStatusData['createdBy'] = currentUser;
+                leaveTypeData['createdBy'] = currentUser;
             }
-            const ProjectStatus = await this.projectStatusRepository.save(await this.projectStatusRepository.create(projectStatusData))
-            return ProjectStatus;
+            const LeaveType = await this.leaveTypeRepository.save(await this.leaveTypeRepository.create(leaveTypeData))
+            return LeaveType;
         } catch (error) {
             console.log(error);
             if (error.name == 'ValidationError') {
@@ -29,20 +29,20 @@ export class ProjectStatusService {
             throw error;
         }
     }
-    async update(id: string, projectStatusData: Partial<UpdateProjectStatusDto>, currentUser: UserEntity | null = null) {
+    async update(id: string, leaveTypeData: Partial<UpdateLeaveTypeDto>, currentUser: UserEntity | null = null) {
         try {
-            let ProjectStatus = await this.projectStatusRepository.findOne({ where: { id } }) || {};
-            Object.keys(projectStatusData).map(key => {
-                ProjectStatus[key] = projectStatusData[key];
+            let leaveType = await this.leaveTypeRepository.findOne({ where: { id } }) || {};
+            Object.keys(leaveTypeData).map(key => {
+                leaveType[key] = leaveTypeData[key];
             });
             if (currentUser && currentUser.id) {
-                ProjectStatus['updatedBy'] = currentUser;
+                leaveType['updatedBy'] = currentUser;
             }
-            await this.projectStatusRepository.save(ProjectStatus);
-            // console.log('update ProjectStatus', ProjectStatus)
-            return ProjectStatus;
+            await this.leaveTypeRepository.save(leaveType);
+            // console.log('update leaveType', leaveType)
+            return leaveType;
         } catch (error) {
-            console.log('error-----', error, projectStatusData)
+            console.log('error-----', error, leaveTypeData)
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -55,8 +55,8 @@ export class ProjectStatusService {
             const sortOrder = {};
             if (sortBy)
                 sortOrder[sortBy] = order;
-            const projectStatuses = page ? await this.projectStatusRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.projectStatusRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
-            return projectStatuses;
+            const leaveTypes = page ? await this.leaveTypeRepository.find({ where: filter, order: sortOrder, skip: (page - 1) * limit, take: limit, relations: relations || [], select:select?._value||select }) : await this.leaveTypeRepository.find({ where: filter, relations: relations || [], select:select?._value||select });
+            return leaveTypes;
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
@@ -67,8 +67,8 @@ export class ProjectStatusService {
 
     async findById(id: string, relations: string[] = []) {
         try {
-            const projectStatus = await this.projectStatusRepository.findOne({ where: { id }, relations });
-            return projectStatus;
+            const leaveType = await this.leaveTypeRepository.findOne({ where: { id }, relations });
+            return leaveType;
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
@@ -79,8 +79,8 @@ export class ProjectStatusService {
     async findOne(query: Record<string, any>) {
         try {
             const { relations, ...filter } = query;
-            const projectStatus = await this.projectStatusRepository.findOne({ where: filter, relations: relations || [] });
-            return projectStatus;
+            const leaveType = await this.leaveTypeRepository.findOne({ where: filter, relations: relations || [] });
+            return leaveType;
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
@@ -90,8 +90,8 @@ export class ProjectStatusService {
     }
     async remove(id: string) {
         try {
-            const projectStatus = await this.projectStatusRepository.delete(id);
-            return projectStatus;
+            const leaveType = await this.leaveTypeRepository.delete(id);
+            return leaveType;
         } catch (error) {
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);

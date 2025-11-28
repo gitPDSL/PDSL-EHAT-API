@@ -14,7 +14,7 @@ export class ClientService {
     async create(clientData: Partial<ClientEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                clientData['updatedBy'] = currentUser;
+                clientData['createdBy'] = currentUser;
             }
             const client = await this.clientRepository.save(await this.clientRepository.create(clientData))
             return client;

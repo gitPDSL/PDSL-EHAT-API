@@ -21,6 +21,10 @@ import { ProjectStatusesModule } from './modules/projectStatus/project-statuses.
 import { SendMailModule } from './modules/mail/mail.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { LeavesModule } from './modules/leave/leaves.module';
+import { LeaveBalancesModule } from './modules/leaveBalance/leave-balances.module';
+import { LeaveTypesModule } from './modules/leaveType/leave-types.module';
+import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module';
 
 @Module({
   imports: [
@@ -52,7 +56,11 @@ import { join } from 'path';
     TimesheetStatusesModule,
     TimesheetsModule,
     UsersModule,
-    SendMailModule
+    SendMailModule,
+    LeavesModule,
+    LeaveBalancesModule,
+    LeaveTypesModule,
+    LeaveStatusesModule
   ],
   controllers: [],
   providers: [

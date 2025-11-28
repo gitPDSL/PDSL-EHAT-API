@@ -14,7 +14,7 @@ export class RoleService {
     async create(roleData: Partial<RoleEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                roleData['updatedBy'] = currentUser;
+                roleData['createdBy'] = currentUser;
             }
             const role = await this.roleRepository.save(await this.roleRepository.create(roleData))
             return role;

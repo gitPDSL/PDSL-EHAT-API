@@ -14,7 +14,7 @@ export class TimesheetStatusService {
     async create(timesheetStatusData: Partial<TimesheetStatusEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                timesheetStatusData['updatedBy'] = currentUser;
+                timesheetStatusData['createdBy'] = currentUser;
             }
             const timesheetStatus = await this.timesheetStatusRepository.save(await this.timesheetStatusRepository.create(timesheetStatusData))
             return timesheetStatus;

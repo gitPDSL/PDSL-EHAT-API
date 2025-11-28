@@ -14,7 +14,7 @@ export class OtpService {
     async create(otpData: Partial<OtpEntity>, currentUser: UserEntity | null = null) {
         try {
             if (currentUser && currentUser.id) {
-                otpData['updatedBy'] = currentUser;
+                otpData['createdBy'] = currentUser;
             }
             const otp = await this.otpRepository.save(await this.otpRepository.create(otpData))
             return otp;
