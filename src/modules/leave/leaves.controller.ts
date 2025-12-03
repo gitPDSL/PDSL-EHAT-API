@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
-import { Between } from 'typeorm';
+import { Between, LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual } from 'typeorm';
 import moment from 'moment';
 @Controller('leaves')
 export class LeavesController {
@@ -30,11 +30,21 @@ export class LeavesController {
         const date = query.date;
         query = QueryTransformTypeorm(query);
         if (date) {
-            let dates = date.split(',').filter(a => a);
-            if (dates.length === 2)
-                query.date = Between(new Date(dates[0]), new Date(dates[1]))
-            else
-                query.date = Between(new Date(moment(dates[0]).startOf('day').toISOString()), new Date(moment(dates[0]).endOf('day').toISOString()))
+            if (query.date.includes('>='))
+                query.date = MoreThanOrEqual(new Date(query.date.replace('>=', '')));
+            else if (query.date.includes('>'))
+                query.date = MoreThan(new Date(query.date.replace('>', '')));
+            else if (query.date.includes('<='))
+                query.date = LessThanOrEqual(new Date(query.date.replace('<=', '')));
+            else if (query.date.includes('<'))
+                query.date = LessThan(new Date(query.date.replace('<', '')));
+            else {
+                let dates = date.split(',').filter(a => a);
+                if (dates.length === 2)
+                    query.date = Between(new Date(dates[0]), new Date(dates[1]))
+                else
+                    query.date = Between(new Date(moment(dates[0]).startOf('day').toISOString()), new Date(moment(dates[0]).endOf('day').toISOString()))
+            }
         }
         if (query.relations)
             query.relations = query.relations.filter(a => a);
