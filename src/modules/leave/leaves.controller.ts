@@ -6,6 +6,8 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Between } from 'typeorm';
+import moment from 'moment';
 @Controller('leaves')
 export class LeavesController {
     constructor(
@@ -25,7 +27,15 @@ export class LeavesController {
     @ApiResponseWrapper(LeaveEntity, true)
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
+        const date = query.date;
         query = QueryTransformTypeorm(query);
+        if (date) {
+            let dates = date.split(',').filter(a => a);
+            if (dates.length === 2)
+                query.date = Between(new Date(dates[0]), new Date(dates[1]))
+            else
+                query.date = Between(new Date(moment(dates[0]).startOf('day').toISOString()), new Date(moment(dates[0]).endOf('day').toISOString()))
+        }
         if (query.relations)
             query.relations = query.relations.filter(a => a);
         return this.leaveService.findAll(query);
