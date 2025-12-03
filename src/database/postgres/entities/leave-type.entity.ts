@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "./user.entity";
 import { ApiProperty } from "@nestjs/swagger";
+import { LeaveBalanceEntity } from "./leave-balance.entity";
 
 @Entity({ name: 'leave_types' })
 export class LeaveTypeEntity {
@@ -27,4 +28,6 @@ export class LeaveTypeEntity {
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'updated_by' })
     updatedBy: UserEntity | null;
+    @OneToMany(() => LeaveBalanceEntity, (leaveBalance) => leaveBalance.leaveTypeId)
+    leaveBalanceTypes: LeaveBalanceEntity[];
 }

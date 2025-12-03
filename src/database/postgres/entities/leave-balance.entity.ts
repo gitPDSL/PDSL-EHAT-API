@@ -11,6 +11,7 @@ import { ProjectEntity } from './project.entity';
 import { UserEntity } from './user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { LeaveStatusEntity } from './leave-status.entity';
+import { LeaveTypeEntity } from './leave-type.entity';
 
 @Entity('leave_balances')
 export class LeaveBalanceEntity {
@@ -57,4 +58,18 @@ export class LeaveBalanceEntity {
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'updated_by' })
     updatedBy: UserEntity | null;
+    // 🔹 Relations
+    @ManyToOne(() => LeaveTypeEntity, (leaveType) => leaveType.leaveBalanceTypes, {
+        onDelete: 'CASCADE',
+        lazy: true,
+    })
+    @JoinColumn({ name: 'leave_type_id' })
+    leaveType: Promise<LeaveTypeEntity>;
+
+    @ManyToOne(() => UserEntity, (user) => user.leaveBalanceUsers, {
+        onDelete: 'CASCADE',
+        lazy: true,  // optional, but can help with circular refs too
+    })
+    @JoinColumn({ name: 'user_id' })
+    user: Promise<UserEntity>;
 }

@@ -17,6 +17,7 @@ import { ProjectEntity } from './project.entity';
 import { ProjectUserEntity } from './project-user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { TimesheetEntity } from './timesheet.entity';
+import { LeaveBalanceEntity } from './leave-balance.entity';
 export enum ACCOUNT_STATUS {
     PENDING = 'PENDING',
     ACTIVE = 'ACTIVE',
@@ -100,5 +101,6 @@ export class UserEntity {
     timesheetUsers: TimesheetEntity[];
     @OneToMany(() => ProjectEntity, (project) => project.manager, { lazy: true })
     managerProjects: ProjectEntity[];
-
+    @OneToMany(() => LeaveBalanceEntity, (leaveBalance) => leaveBalance.userId)
+    leaveBalanceUsers: LeaveBalanceEntity[];
 }
