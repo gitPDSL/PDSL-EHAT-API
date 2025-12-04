@@ -30,14 +30,14 @@ export class LeavesController {
         const date = query.date;
         query = QueryTransformTypeorm(query);
         if (date) {
-            if (query.date.includes('>='))
-                query.date = MoreThanOrEqual(new Date(query.date.replace('>=', '')));
-            else if (query.date.includes('>'))
-                query.date = MoreThan(new Date(query.date.replace('>', '')));
-            else if (query.date.includes('<='))
-                query.date = LessThanOrEqual(new Date(query.date.replace('<=', '')));
-            else if (query.date.includes('<'))
-                query.date = LessThan(new Date(query.date.replace('<', '')));
+            if (date.includes('>='))
+                query.date = MoreThanOrEqual(new Date(date.replace('>=', '')));
+            else if (date.includes('>'))
+                query.date = MoreThan(new Date(date.replace('>', '')));
+            else if (date.includes('<='))
+                query.date = LessThanOrEqual(new Date(date.replace('<=', '')));
+            else if (date.includes('<'))
+                query.date = LessThan(new Date(date.replace('<', '')));
             else {
                 let dates = date.split(',').filter(a => a);
                 if (dates.length === 2)
