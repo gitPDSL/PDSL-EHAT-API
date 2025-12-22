@@ -7,7 +7,6 @@ import {
     UpdateDateColumn,
     Column,
 } from 'typeorm';
-import { ProjectEntity } from './project.entity';
 import { UserEntity } from './user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { LeaveStatusEntity } from './leave-status.entity';
