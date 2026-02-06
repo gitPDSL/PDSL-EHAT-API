@@ -19,7 +19,10 @@ export class LeaveEntity {
     leaveType?: LeaveTypeEntity;
     @ApiProperty()
     @Column({ type: 'timestamp' })
-    date: Date;
+    startDate: Date;
+    @ApiProperty()
+    @Column({ type: 'timestamp' })
+    endDate: Date;
     @ApiProperty()
     @Column({ type: 'float', nullable: true })
     leave: number;

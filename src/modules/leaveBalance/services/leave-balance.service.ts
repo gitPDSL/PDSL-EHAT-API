@@ -73,7 +73,7 @@ export class LeaveBalanceService {
             return await Promise.all(leaveBalances.map(async (lb: any) => {
                 const date1: any = moment().year(lb.year).startOf('year');
                 const date2: any = moment().year(lb.year).endOf('year');
-                const leaveUsed = await this.leaveRepository.countBy({ user: { id: lb.userId }, leaveType: { id: lb.leaveTypeId }, date: Between(new Date(date1), new Date(date2)), status: { id: 'APPROVED' } });
+                const leaveUsed = await this.leaveRepository.countBy({ user: { id: lb.userId }, leaveType: { id: lb.leaveTypeId }, startDate: Between(new Date(date1), new Date(date2)), endDate: Between(new Date(date1), new Date(date2)), status: { id: 'APPROVED' } });
                 lb.leaveUsed = leaveUsed;
                 return lb;
             }));
@@ -90,7 +90,7 @@ export class LeaveBalanceService {
             const leaveBalance: any = await this.leaveBalanceRepository.findOne({ where: { userId: user, leaveTypeId: leaveType, year }, relations });
             const date1: any = moment().year(leaveBalance.year).startOf('year');
             const date2: any = moment().year(leaveBalance.year).endOf('year');
-            const leaveUsed = await this.leaveRepository.countBy({ user: { id: leaveBalance.userId }, leaveType: { id: leaveBalance.leaveTypeId }, date: Between(new Date(date1), new Date(date2)), status: { id: Not('APPROVED') } });
+            const leaveUsed = await this.leaveRepository.countBy({ user: { id: leaveBalance.userId }, leaveType: { id: leaveBalance.leaveTypeId }, startDate: Between(new Date(date1), new Date(date2)), endDate: Between(new Date(date1), new Date(date2)), status: { id: Not('APPROVED') } });
             leaveBalance.leaveUsed = leaveUsed;
             return leaveBalance;
         } catch (error) {
@@ -106,7 +106,7 @@ export class LeaveBalanceService {
             const leaveBalance: any = await this.leaveBalanceRepository.findOne({ where: filter, relations: relations || [] });
             const date1: any = moment().year(leaveBalance.year).startOf('year');
             const date2: any = moment().year(leaveBalance.year).endOf('year');
-            const leaveUsed = await this.leaveRepository.countBy({ user: { id: leaveBalance.userId }, leaveType: { id: leaveBalance.leaveTypeId }, date: Between(new Date(date1), new Date(date2)), status: { id: 'APPROVED' } });
+            const leaveUsed = await this.leaveRepository.countBy({ user: { id: leaveBalance.userId }, leaveType: { id: leaveBalance.leaveTypeId }, startDate: Between(new Date(date1), new Date(date2)), endDate: Between(new Date(date1), new Date(date2)), status: { id: 'APPROVED' } });
             leaveBalance.leaveUsed = leaveUsed;
             return leaveBalance;
         } catch (error) {

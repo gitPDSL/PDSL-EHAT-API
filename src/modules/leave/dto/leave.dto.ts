@@ -11,7 +11,10 @@ export class CreateLeaveDto {
     leaveType: string;
     @ApiProperty()
     @IsDateString()
-    date?: string;
+    startDate?: string;
+    @ApiProperty()
+    @IsDateString()
+    endDate?: string;
     @ApiProperty()
     @IsNumber()
     leave?: number;

@@ -27,6 +27,12 @@ export class LeaveBalanceEntity {
     @Column({ name: 'total_leaves', type: 'int' })
     totalLeaves: number;
     @ApiProperty()
+    @Column({ name: 'per_month_leaves_used', type: 'int' })
+    perMonthLeaveUsed: number;
+    @ApiProperty()
+    @Column({ name: 'disable_months' })
+    disableMonths: string;
+    @ApiProperty()
     @Column({ name: 'leaves_used', type: 'int' })
     leavesUsed: number;
     @ApiProperty()

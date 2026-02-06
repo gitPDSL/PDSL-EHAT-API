@@ -17,6 +17,12 @@ export class CreateLeaveBalanceDto {
     totalLeaves?: number;
     @ApiProperty()
     @IsInt()
+    perMonthLeaveUsed?: number;
+    @ApiProperty()
+    @IsString()
+    disableMonths?: string;
+    @ApiProperty()
+    @IsInt()
     leavesUsed?: number;
     @ApiProperty()
     @IsOptional()
