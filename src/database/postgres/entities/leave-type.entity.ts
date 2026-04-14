@@ -14,6 +14,9 @@ export class LeaveTypeEntity {
     @ApiProperty()
     @Column()
     description: string;
+    @ApiProperty({ description: 'Annual entitlement in days for this leave type' })
+    @Column({ name: 'default_entitlement', type: 'int', default: 0 })
+    defaultEntitlement: number;
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;

@@ -6,6 +6,7 @@ import { UpdateLeaveBalanceDto } from '../dto/leave-balance.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateLeaveBalanceDto } from '../dto/leave-balance.dto';
 import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
+import { LeaveTypeEntity } from 'src/database/postgres/entities/leave-type.entity';
 import * as moment from 'moment';
 
 @Injectable()
@@ -13,8 +14,31 @@ export class LeaveBalanceService {
     private readonly logger = new Logger(LeaveBalanceService.name);
     constructor(
         @InjectRepository(LeaveBalanceEntity) private readonly leaveBalanceRepository: Repository<LeaveBalanceEntity>,
-        @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>
+        @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
+        @InjectRepository(LeaveTypeEntity) private readonly leaveTypeRepository: Repository<LeaveTypeEntity>,
     ) {
+    }
+
+    async provisionForUser(userId: string, year: number = new Date().getFullYear()): Promise<number> {
+        const types = await this.leaveTypeRepository.find();
+        let created = 0;
+        for (const type of types) {
+            const existing = await this.leaveBalanceRepository.findOne({
+                where: { userId, leaveTypeId: type.id, year },
+            });
+            if (existing) continue;
+            await this.leaveBalanceRepository.save(this.leaveBalanceRepository.create({
+                userId,
+                leaveTypeId: type.id,
+                year,
+                totalLeaves: type.defaultEntitlement,
+                leavesUsed: 0,
+                perMonthLeaveUsed: 0,
+                disableMonths: '',
+            } as any));
+            created++;
+        }
+        return created;
     }
     async create(data: Partial<CreateLeaveBalanceDto>, currentUser: UserEntity | null = null) {
         try {

@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config/configuration';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
@@ -48,6 +49,7 @@ import { AuditModule } from './modules/audit/audit.module';
       secret: process.env.JWT_ACCESS_SECRET,
       signOptions: { expiresIn: process.env.JWT_EXPIRE_TIME || '60s' },
     }),
+    ScheduleModule.forRoot(),
     MailModule.forRoot(),
     PostgresModule.forRootAsync(),
     AuthModule,

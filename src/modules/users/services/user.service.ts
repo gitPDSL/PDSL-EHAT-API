@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { ACCOUNT_STATUS } from 'src/constants/account.constants';
 import { AuditService } from 'src/modules/audit/audit.service';
+import { LeaveBalanceService } from 'src/modules/leaveBalance/services/leave-balance.service';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
         private mailService: MailService,
         private jwtService: JwtService,
         private readonly auditService: AuditService,
+        private readonly leaveBalanceService: LeaveBalanceService,
     ) {
     }
     async findByEmailAndPassword(email: string, password: string): Promise<any> {
@@ -71,6 +73,14 @@ export class UserService {
             const newUser: any = await this.userRepository.save(user)
             if (newUser.status == ACCOUNT_STATUS.PENDING)
                 await this.sendVerificationMail(newUser);
+            try {
+                await this.leaveBalanceService.provisionForUser(newUser.id);
+            } catch (provisionError: any) {
+                this.logger.error(
+                    `Failed to provision leave balances for new user ${newUser.id}: ${provisionError?.message ?? provisionError}`,
+                    provisionError?.stack,
+                );
+            }
             return user;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);
