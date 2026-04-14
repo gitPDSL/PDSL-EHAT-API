@@ -33,10 +33,16 @@ export class AuthService {
             }),
             this.jwtService.signAsync(payload, {
                 expiresIn: process.env.JWT_REFRESH_EXPIRE_TIME || '7d',
+                secret: process.env.JWT_REFRESH_SECRET,
             }),
         ]);
 
         return { accessToken, refreshToken };
+    }
+
+    async logout(userId: string) {
+        await this.userService.update(userId, { refreshToken: null as any });
+        return { message: 'Logged out' };
     }
 
     async updateRefreshToken(userId: string, token: string) {

@@ -36,4 +36,24 @@ describe('Auth (e2e)', () => {
             .send({ email, password: 'WrongPassword1!' })
             .expect(401);
     });
+
+    it('POST /api/auth/logout clears the refresh token hash', async () => {
+        const login = await request(app.getHttpServer())
+            .post('/api/auth/login')
+            .send({ email, password: TEST_USER_PASSWORD })
+            .expect(201);
+        const { accessToken, refreshToken } = login.body.data;
+        expect(accessToken).toBeDefined();
+        expect(refreshToken).toBeDefined();
+
+        await request(app.getHttpServer())
+            .post('/api/auth/logout')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .expect(201);
+
+        await request(app.getHttpServer())
+            .get('/api/auth/refresh')
+            .set('Authorization', `Bearer ${refreshToken}`)
+            .expect(403);
+    });
 });

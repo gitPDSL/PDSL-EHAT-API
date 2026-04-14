@@ -93,6 +93,14 @@ export class AuthController {
         // console.log(req['user'])
         return this.authService.refreshTokens(req['user'].sub, req['user'].refreshToken);
     }
+    @ApiOperation({ summary: 'Logout', description: 'Clears the stored refresh token hash so the current refresh token can no longer be used.' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Post('logout')
+    async logout(@Req() req: Request): Promise<any> {
+        return this.authService.logout(req['user'].id);
+    }
+
     @ApiOperation({ summary: 'Update logged user' })
     @ApiBody({ type: PartialCreateUserDto })
     @ApiResponseWrapper(UserEntity)
