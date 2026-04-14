@@ -7,6 +7,7 @@ import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { ACCOUNT_STATUS } from 'src/constants/account.constants';
+import { AuditService } from 'src/modules/audit/audit.service';
 
 @Injectable()
 export class UserService {
@@ -16,6 +17,7 @@ export class UserService {
         @InjectDataSource() private readonly dataSource: DataSource,
         private mailService: MailService,
         private jwtService: JwtService,
+        private readonly auditService: AuditService,
     ) {
     }
     async findByEmailAndPassword(email: string, password: string): Promise<any> {
@@ -120,12 +122,23 @@ export class UserService {
             }
             if (userData.department)
                 userData.department = { id: userData.department };
-            let user = await this.userRepository.findOne({ where: { id } }) || {};
+            let user: any = await this.userRepository.findOne({ where: { id }, relations: ['role'] }) || {};
+            const prevRoleId: string | null = user?.role?.id ?? null;
             Object.keys(userData).map(key => {
                 user[key] = userData[key];
             })
             await this.userRepository.save(user);
-            // console.log('update user', user)
+            const nextRoleId: string | null = user?.role?.id ?? null;
+            if (userData.role && prevRoleId !== nextRoleId) {
+                await this.auditService.log({
+                    actorId: currentUser?.id ?? null,
+                    action: 'user.role.change',
+                    entityType: 'User',
+                    entityId: id,
+                    before: { role: prevRoleId },
+                    after: { role: nextRoleId },
+                });
+            }
             return await this.userRepository.findOne({ where: { id } }) || {};
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);
@@ -247,6 +260,14 @@ export class UserService {
     async remove(id: string, currentUser: any) {
         try {
             const user = await this.userRepository.softDelete(id);
+            await this.auditService.log({
+                actorId: currentUser?.id ?? null,
+                action: 'user.archive',
+                entityType: 'User',
+                entityId: id,
+                before: { deletedAt: null },
+                after: { deletedAt: new Date().toISOString() },
+            });
             return user;
         } catch (error) {
             if (error.name == 'ValidationError') {

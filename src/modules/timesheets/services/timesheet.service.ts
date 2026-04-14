@@ -6,6 +6,7 @@ import * as moment from 'moment';
 import { UpdateTimesheetDto } from '../dto/timesheet.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
+import { AuditService } from 'src/modules/audit/audit.service';
 
 @Injectable()
 export class TimesheetService {
@@ -13,6 +14,7 @@ export class TimesheetService {
     constructor(
         @InjectRepository(TimesheetEntity) private readonly timesheetRepository: Repository<TimesheetEntity>,
         @InjectDataSource() private readonly dataSource: DataSource,
+        private readonly auditService: AuditService,
     ) {
     }
     private async assertDailyHoursCap(
@@ -76,7 +78,8 @@ export class TimesheetService {
             timesheetData.approvedBy = { id: timesheetData.approvedBy };
         try {
 
-            let timesheet: any = await this.timesheetRepository.findOne({ where: { id } }) || {};
+            let timesheet: any = await this.timesheetRepository.findOne({ where: { id }, relations: ['status'] }) || {};
+            const prevStatusId = timesheet.status?.id ?? null;
             if (timesheetData.hours !== undefined && timesheet.userId && timesheet.date) {
                 await this.assertDailyHoursCap(
                     timesheet.userId,
@@ -89,7 +92,17 @@ export class TimesheetService {
                 timesheet[key] = timesheetData[key];
             })
             await this.timesheetRepository.save(timesheet);
-            // console.log('update timesheet', timesheet)
+            const newStatusId = timesheet.status?.id ?? null;
+            if (timesheetData.status && prevStatusId !== newStatusId) {
+                await this.auditService.log({
+                    actorId: currentUser?.id ?? null,
+                    action: 'timesheet.status.change',
+                    entityType: 'Timesheet',
+                    entityId: id,
+                    before: { status: prevStatusId },
+                    after: { status: newStatusId },
+                });
+            }
             return timesheet;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);
@@ -112,7 +125,7 @@ export class TimesheetService {
         try {
             const allTimesheets = await this.timesheetRepository.find({
                 where: query,
-                relations: ['user', 'user.manager', 'project', 'project.manager'],
+                relations: ['user', 'user.manager', 'project', 'project.manager', 'status'],
             });
             // console.log('====================', allTimesheets)
             if (!allTimesheets) throw new NotFoundException('No user found matching the query.');
@@ -131,6 +144,10 @@ export class TimesheetService {
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
+            const prevStatusByTimesheetId = new Map<string, string | null>();
+            for (const ts of timesheets) {
+                prevStatusByTimesheetId.set(ts.id, (ts as any).status?.id ?? null);
+            }
             const timesheetList = await this.dataSource.transaction(async (manager) => {
                 const saved: any[] = [];
                 for (let timesheet of timesheets) {
@@ -143,6 +160,22 @@ export class TimesheetService {
                 }
                 return saved;
             });
+            if (timesheetData.status) {
+                for (const ts of timesheetList) {
+                    const prev = prevStatusByTimesheetId.get(ts.id) ?? null;
+                    const next = (ts as any).status?.id ?? null;
+                    if (prev !== next) {
+                        await this.auditService.log({
+                            actorId: currentUser?.id ?? null,
+                            action: 'timesheet.status.change',
+                            entityType: 'Timesheet',
+                            entityId: ts.id,
+                            before: { status: prev },
+                            after: { status: next },
+                        });
+                    }
+                }
+            }
             return timesheetList;
         } catch (err) {
             this.logger.error(err?.message ?? String(err), err?.stack);

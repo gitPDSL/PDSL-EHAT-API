@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { UpdateLeaveDto } from '../dto/leave.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateLeaveDto } from '../dto/leave.dto';
+import { AuditService } from 'src/modules/audit/audit.service';
 
 @Injectable()
 export class LeaveService {
     private readonly logger = new Logger(LeaveService.name);
     constructor(
-        @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>
+        @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
+        private readonly auditService: AuditService,
     ) {
     }
     async create(data: Partial<CreateLeaveDto>, currentUser: UserEntity | null = null) {
@@ -54,12 +56,23 @@ export class LeaveService {
         if (leaveData.approvedBy)
             leaveData.approvedBy = { id: leaveData.approvedBy };
         try {
-            let leave = await this.leaveRepository.findOne({ where: { id } }) || {};
+            let leave: any = await this.leaveRepository.findOne({ where: { id }, relations: ['status'] }) || {};
+            const prevStatusId: string | null = leave?.status?.id ?? null;
             Object.keys(leaveData).map(key => {
                 leave[key] = leaveData[key];
             })
             await this.leaveRepository.save(leave);
-            // console.log('update leave', leave)
+            const nextStatusId: string | null = leave?.status?.id ?? null;
+            if (leaveData.status && prevStatusId !== nextStatusId) {
+                await this.auditService.log({
+                    actorId: currentUser?.id ?? null,
+                    action: 'leave.status.change',
+                    entityType: 'Leave',
+                    entityId: id,
+                    before: { status: prevStatusId },
+                    after: { status: nextStatusId },
+                });
+            }
             return leave;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);

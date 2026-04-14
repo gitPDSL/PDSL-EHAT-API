@@ -5,12 +5,14 @@ import { Repository } from 'typeorm';
 import { UpdateProjectDto } from '../dto/project.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateProjectDto } from '../dto/project.dto';
+import { AuditService } from 'src/modules/audit/audit.service';
 
 @Injectable()
 export class ProjectService {
     private readonly logger = new Logger(ProjectService.name);
     constructor(
-        @InjectRepository(ProjectEntity) private readonly projectRepository: Repository<ProjectEntity>
+        @InjectRepository(ProjectEntity) private readonly projectRepository: Repository<ProjectEntity>,
+        private readonly auditService: AuditService,
     ) {
     }
     async create(data: Partial<CreateProjectDto>, currentUser: UserEntity | null = null) {
@@ -50,12 +52,23 @@ export class ProjectService {
         if (projectData.status)
             projectData.status = { id: projectData.status };
         try {
-            let project = await this.projectRepository.findOne({ where: { id } }) || {};
+            let project: any = await this.projectRepository.findOne({ where: { id }, relations: ['manager'] }) || {};
+            const prevManagerId: string | null = project?.manager?.id ?? null;
             Object.keys(projectData).map(key => {
                 project[key] = projectData[key];
             })
             await this.projectRepository.save(project);
-            // console.log('update project', project)
+            const nextManagerId: string | null = project?.manager?.id ?? null;
+            if (projectData.manager && prevManagerId !== nextManagerId) {
+                await this.auditService.log({
+                    actorId: currentUser?.id ?? null,
+                    action: 'project.manager.change',
+                    entityType: 'Project',
+                    entityId: id,
+                    before: { manager: prevManagerId },
+                    after: { manager: nextManagerId },
+                });
+            }
             return project;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);
