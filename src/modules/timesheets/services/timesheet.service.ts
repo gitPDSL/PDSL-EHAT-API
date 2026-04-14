@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { Between, DataSource, Not, Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { UpdateTimesheetDto } from '../dto/timesheet.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
 import { AuditService } from 'src/modules/audit/audit.service';
+import { PayrollService } from 'src/modules/payroll/services/payroll.service';
 
 @Injectable()
 export class TimesheetService {
@@ -15,7 +16,31 @@ export class TimesheetService {
         @InjectRepository(TimesheetEntity) private readonly timesheetRepository: Repository<TimesheetEntity>,
         @InjectDataSource() private readonly dataSource: DataSource,
         private readonly auditService: AuditService,
+        private readonly payrollService: PayrollService,
     ) {
+    }
+
+    private async assertNotInLockedPeriod(
+        date: Date | string,
+        currentUser: any,
+        timesheetId?: string,
+    ): Promise<void> {
+        const locked = await this.payrollService.findLockedPeriodCovering(date);
+        if (!locked) return;
+        if (currentUser?.role?.id === 'ADMIN') {
+            await this.auditService.log({
+                actorId: currentUser?.id ?? null,
+                action: 'payroll.lock.override',
+                entityType: 'Timesheet',
+                entityId: timesheetId ?? 'new',
+                before: { lockedPeriodId: locked.id, periodStart: locked.startDate, periodEnd: locked.endDate },
+                after: { override: true },
+            });
+            return;
+        }
+        throw new ForbiddenException(
+            `Cannot modify a timesheet whose date falls in locked payroll period ${locked.startDate} to ${locked.endDate}`,
+        );
     }
     private async assertDailyHoursCap(
         userId: string,
@@ -53,6 +78,9 @@ export class TimesheetService {
                     Number(timesheetData.hours),
                 );
             }
+            if (timesheetData.date) {
+                await this.assertNotInLockedPeriod(timesheetData.date, currentUser);
+            }
             // console.log(timesheetData)
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
@@ -87,6 +115,9 @@ export class TimesheetService {
                     Number(timesheetData.hours),
                     id,
                 );
+            }
+            if (timesheet.date) {
+                await this.assertNotInLockedPeriod(timesheet.date, currentUser, id);
             }
             Object.keys(timesheetData).map(key => {
                 timesheet[key] = timesheetData[key];
@@ -147,6 +178,9 @@ export class TimesheetService {
             const prevStatusByTimesheetId = new Map<string, string | null>();
             for (const ts of timesheets) {
                 prevStatusByTimesheetId.set(ts.id, (ts as any).status?.id ?? null);
+                if ((ts as any).date) {
+                    await this.assertNotInLockedPeriod((ts as any).date, currentUser, ts.id);
+                }
             }
             const timesheetList = await this.dataSource.transaction(async (manager) => {
                 const saved: any[] = [];

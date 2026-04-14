@@ -30,6 +30,7 @@ import { LeaveTypesModule } from './modules/leaveType/leave-types.module';
 import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
 
 @Module({
   imports: [
@@ -68,7 +69,8 @@ import { AuditModule } from './modules/audit/audit.module';
     LeaveTypesModule,
     LeaveStatusesModule,
     HealthModule,
-    AuditModule
+    AuditModule,
+    PayrollModule
   ],
   controllers: [],
   providers: [
