@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { UpdateProjectUserDto } from '../dto/project-user.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateProjectDto } from 'src/modules/projects/dto/project.dto';
@@ -10,7 +10,8 @@ import { CreateProjectDto } from 'src/modules/projects/dto/project.dto';
 export class ProjectUserService {
     private readonly logger = new Logger(ProjectUserService.name);
     constructor(
-        @InjectRepository(ProjectUserEntity) private readonly projectUserRepository: Repository<ProjectUserEntity>
+        @InjectRepository(ProjectUserEntity) private readonly projectUserRepository: Repository<ProjectUserEntity>,
+        @InjectDataSource() private readonly dataSource: DataSource,
     ) {
     }
     async create(data: Partial<CreateProjectDto>, currentUser: UserEntity | null = null) {
@@ -76,19 +77,18 @@ export class ProjectUserService {
             const projectUsers = await this.projectUserRepository.find({ where: query });
             // console.log('====================', users)
             if (!projectUsers) throw new NotFoundException('No user found matching the query.');
-            let projectUserList: any = [];
-
-            for (let projectUser of projectUsers) {
-
-
-                Object.assign(projectUser, {
-                    ...projectUserData,
-                    updatedBy: currentUser,
-                });
-                // console.log(user)
-                projectUser = await this.projectUserRepository.save(projectUser);
-                projectUserList.push(projectUser);
-            }
+            const projectUserList = await this.dataSource.transaction(async (manager) => {
+                const saved: any[] = [];
+                for (let projectUser of projectUsers) {
+                    Object.assign(projectUser, {
+                        ...projectUserData,
+                        updatedBy: currentUser,
+                    });
+                    projectUser = await manager.save(projectUser);
+                    saved.push(projectUser);
+                }
+                return saved;
+            });
             return projectUserList;
         } catch (err) {
             this.logger.error(err?.message ?? String(err), err?.stack);

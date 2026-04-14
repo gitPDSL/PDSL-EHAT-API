@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
-import { IsDateString, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsInt, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
 export class CreateTimesheetDto {
@@ -21,6 +21,8 @@ export class CreateTimesheetDto {
     date?: Date;
     @ApiProperty()
     @IsNumber()
+    @Min(0)
+    @Max(24)
     hours: number;
     @ApiProperty()
     @IsDateString()

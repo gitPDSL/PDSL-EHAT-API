@@ -1,9 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { MailService } from 'src/mail/mail.service';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { ACCOUNT_STATUS } from 'src/constants/account.constants';
@@ -13,6 +13,7 @@ export class UserService {
     private readonly logger = new Logger(UserService.name);
     constructor(
         @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
+        @InjectDataSource() private readonly dataSource: DataSource,
         private mailService: MailService,
         private jwtService: JwtService,
     ) {
@@ -131,27 +132,28 @@ export class UserService {
             const users = await this.userRepository.find({ where: query, relations: ['department', 'role', 'manager'] });
             // console.log('====================', users)
             if (!users) throw new NotFoundException('No user found matching the query.');
-            let userList: any = [];
             if (userData.role)
                 userData.role = { id: userData.role };
             if (userData.manager)
                 userData.manager = { id: userData.manager };
             if (userData.department)
                 userData.department = { id: userData.department };
-            for (let user of users) {
-                if (userData.password) {
-                    userData['passwordHash'] = await bcrypt.hash(userData.password, 10);
-                    delete userData.password;
+            const userList = await this.dataSource.transaction(async (manager) => {
+                const saved: any[] = [];
+                for (let user of users) {
+                    if (userData.password) {
+                        userData['passwordHash'] = await bcrypt.hash(userData.password, 10);
+                        delete userData.password;
+                    }
+                    Object.assign(user, {
+                        ...userData,
+                        updatedBy: currentUser,
+                    });
+                    user = await manager.save(user);
+                    saved.push(user);
                 }
-
-                Object.assign(user, {
-                    ...userData,
-                    updatedBy: currentUser,
-                });
-                // console.log(user)
-                user = await this.userRepository.save(user);
-                userList.push(user);
-            }
+                return saved;
+            });
             return userList;
         } catch (err) {
             this.logger.error(err?.message ?? String(err), err?.stack);

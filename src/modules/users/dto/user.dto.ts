@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator";
 import { ACCOUNT_STATUS } from "src/constants/account.constants";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
@@ -14,6 +14,13 @@ export class CreateUserDto {
     @ApiProperty()
     @IsOptional()
     @MinLength(8)
+    @Matches(
+        /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*)(+=._-]).{8,}$/,
+        {
+            message:
+                'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character from !@#$%^&*)(+=._-',
+        },
+    )
     password: string;
     @ApiProperty()
     @IsOptional()

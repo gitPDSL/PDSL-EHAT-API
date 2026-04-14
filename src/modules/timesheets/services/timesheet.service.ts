@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
-import { Not, Repository } from 'typeorm';
+import { Between, DataSource, Not, Repository } from 'typeorm';
+import * as moment from 'moment';
 import { UpdateTimesheetDto } from '../dto/timesheet.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
@@ -10,8 +11,28 @@ import { CreateTimesheetDto } from '../dto/timesheet.dto';
 export class TimesheetService {
     private readonly logger = new Logger(TimesheetService.name);
     constructor(
-        @InjectRepository(TimesheetEntity) private readonly timesheetRepository: Repository<TimesheetEntity>
+        @InjectRepository(TimesheetEntity) private readonly timesheetRepository: Repository<TimesheetEntity>,
+        @InjectDataSource() private readonly dataSource: DataSource,
     ) {
+    }
+    private async assertDailyHoursCap(
+        userId: string,
+        date: Date | string,
+        newHours: number,
+        excludeId?: string,
+    ) {
+        const start = moment(date).startOf('day').toDate();
+        const end = moment(date).endOf('day').toDate();
+        const where: any = { userId, date: Between(start, end) };
+        if (excludeId) where.id = Not(excludeId);
+        const existing = await this.timesheetRepository.find({ where });
+        const currentSum = existing.reduce((s, t) => s + Number(t.hours ?? 0), 0);
+        const total = currentSum + Number(newHours);
+        if (total > 24) {
+            throw new BadRequestException(
+                `Daily hours cap exceeded: user has ${currentSum}h on ${moment(date).format('YYYY-MM-DD')}, this entry would make it ${total}h (max 24).`,
+            );
+        }
     }
     async create(data: Partial<CreateTimesheetDto>, currentUser: UserEntity | null = null) {
         try {
@@ -23,6 +44,13 @@ export class TimesheetService {
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
+            if (timesheetData.userId && timesheetData.date && timesheetData.hours !== undefined) {
+                await this.assertDailyHoursCap(
+                    timesheetData.userId,
+                    timesheetData.date,
+                    Number(timesheetData.hours),
+                );
+            }
             // console.log(timesheetData)
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
@@ -48,7 +76,15 @@ export class TimesheetService {
             timesheetData.approvedBy = { id: timesheetData.approvedBy };
         try {
 
-            let timesheet = await this.timesheetRepository.findOne({ where: { id } }) || {};
+            let timesheet: any = await this.timesheetRepository.findOne({ where: { id } }) || {};
+            if (timesheetData.hours !== undefined && timesheet.userId && timesheet.date) {
+                await this.assertDailyHoursCap(
+                    timesheet.userId,
+                    timesheet.date,
+                    Number(timesheetData.hours),
+                    id,
+                );
+            }
             Object.keys(timesheetData).map(key => {
                 timesheet[key] = timesheetData[key];
             })
@@ -77,7 +113,6 @@ export class TimesheetService {
             const timesheets = await this.timesheetRepository.find({ where: query });
             // console.log('====================', timesheets)
             if (!timesheets) throw new NotFoundException('No user found matching the query.');
-            let timesheetList: any = [];
             if (currentUser && currentUser.id) {
                 timesheetData['updatedBy'] = currentUser;
             }
@@ -85,15 +120,18 @@ export class TimesheetService {
                 timesheetData.status = { id: timesheetData.status };
             if (timesheetData.approvedBy)
                 timesheetData.approvedBy = { id: timesheetData.approvedBy };
-            for (let timesheet of timesheets) {
-                Object.assign(timesheet, {
-                    ...timesheetData,
-                    updatedBy: currentUser,
-                });
-                // console.log(user)
-                timesheet = await this.timesheetRepository.save(timesheet);
-                timesheetList.push(timesheet);
-            }
+            const timesheetList = await this.dataSource.transaction(async (manager) => {
+                const saved: any[] = [];
+                for (let timesheet of timesheets) {
+                    Object.assign(timesheet, {
+                        ...timesheetData,
+                        updatedBy: currentUser,
+                    });
+                    timesheet = await manager.save(timesheet);
+                    saved.push(timesheet);
+                }
+                return saved;
+            });
             return timesheetList;
         } catch (err) {
             this.logger.error(err?.message ?? String(err), err?.stack);

@@ -43,15 +43,17 @@ async function bootstrap() {
     preflightContinue: false, // let Nest handle it
     optionsSuccessStatus: 204
   });
-  const swagerConfig = new DocumentBuilder()
-    .setTitle('PDSL EHAT API')
-    .setDescription('PDSL EHAT API description here. [Download Swagger JSON](./docs-json)')
-    .setVersion('1.0')
-    .addBearerAuth()
-    // .addTag('Admin')
-    .build();
-  const documentFactory = SwaggerModule.createDocument(app, swagerConfig);
-  SwaggerModule.setup('api/docs', app, documentFactory);
+  if (process.env.NODE_ENV !== 'production') {
+    const swagerConfig = new DocumentBuilder()
+      .setTitle('PDSL EHAT API')
+      .setDescription('PDSL EHAT API description here. [Download Swagger JSON](./docs-json)')
+      .setVersion('1.0')
+      .addBearerAuth()
+      // .addTag('Admin')
+      .build();
+    const documentFactory = SwaggerModule.createDocument(app, swagerConfig);
+    SwaggerModule.setup('api/docs', app, documentFactory);
+  }
 
   await app.init();
   createHttpServer(server).listen(port);
