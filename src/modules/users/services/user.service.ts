@@ -223,7 +223,7 @@ export class UserService {
     }
     async remove(id: string, currentUser: any) {
         try {
-            const user = await this.userRepository.delete(id);
+            const user = await this.userRepository.softDelete(id);
             return user;
         } catch (error) {
             if (error.name == 'ValidationError') {

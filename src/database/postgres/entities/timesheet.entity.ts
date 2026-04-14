@@ -86,7 +86,7 @@ export class TimesheetEntity {
   project: Promise<ProjectEntity>;
 
   @ManyToOne(() => UserEntity, (user) => user.timesheetUsers, {
-    onDelete: 'CASCADE',
+    onDelete: 'RESTRICT',
     lazy: true,  // optional, but can help with circular refs too
   })
   @JoinColumn({ name: 'user_id' })

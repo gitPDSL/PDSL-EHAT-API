@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Logger, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { UserService } from './services/user.service';
 import { Request } from 'express';
 import { CreateUserDto, PartialCreateUserDto, UpdateUserDto } from './dto/user.dto';
@@ -8,18 +8,13 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { ParseEmailPipe, ParseOptionalEmailPipe } from 'src/pipes/parse-email.pipe';
 import { OptionalPasswordValidationPipe } from 'src/pipes/password-validation.pipe';
 import { In } from 'typeorm';
-import { TimesheetService } from '../timesheets/services/timesheet.service';
-import { ProjectUserService } from '../projectUsers/services/project-user.service';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
 import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
-    private readonly logger = new Logger(UsersController.name);
     constructor(
         private userService: UserService,
-        private timesheetService: TimesheetService,
-        private projectUserService: ProjectUserService,
     ) { }
     @ApiOperation({ summary: 'Create a new user (admin only)' })
     @ApiBearerAuth()
@@ -89,19 +84,12 @@ export class UsersController {
     }
 
 
-    @ApiOperation({ summary: 'Delete user (admin only)' })
+    @ApiOperation({ summary: 'Soft delete user (admin only). Sets deleted_at and leaves timesheets and project assignments intact for historical reporting.' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
     @Roles('ADMIN')
     @Delete(':id')
     async delete(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
-        // console.log('hi-----------------------------------')
-        try {
-            await this.timesheetService.removeMany({ userId: id });
-            await this.projectUserService.removeMany({ userId: id });
-        } catch (er) {
-            this.logger.error(er?.message ?? String(er), er?.stack);
-        }
         return this.userService.remove(id, req['user']);
     }
 }

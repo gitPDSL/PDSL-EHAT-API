@@ -6,6 +6,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    DeleteDateColumn,
     Index,
     ManyToMany,
     JoinTable,
@@ -73,6 +74,9 @@ export class UserEntity {
     @ApiProperty()
     @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
     updatedAt: Date;
+    @ApiProperty({ required: false, nullable: true })
+    @DeleteDateColumn({ name: 'deleted_at', type: 'timestamp', nullable: true })
+    deletedAt: Date | null;
     @ApiProperty()
     @ManyToOne(() => UserEntity, { nullable: true })
     @JoinColumn({ name: 'created_by' })
