@@ -2,7 +2,7 @@ import * as request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { createTestApp } from './helpers/app-factory';
-import { seedBase, TEST_USER_PASSWORD } from './helpers/seed';
+import { seedBase, seedRegularUser, TEST_USER_PASSWORD } from './helpers/seed';
 
 describe('Users (e2e)', () => {
     let app!: INestApplication;
@@ -40,5 +40,25 @@ describe('Users (e2e)', () => {
         await request(app.getHttpServer())
             .get('/api/users')
             .expect(401);
+    });
+
+    it('POST /api/users as a USER-role caller returns 403', async () => {
+        const regular = await seedRegularUser(dataSource, 'users-test');
+        const login = await request(app.getHttpServer())
+            .post('/api/auth/login')
+            .send({ email: regular.email, password: TEST_USER_PASSWORD })
+            .expect(201);
+        const regularToken = login.body.data.accessToken;
+
+        await request(app.getHttpServer())
+            .post('/api/users')
+            .set('Authorization', `Bearer ${regularToken}`)
+            .send({
+                fullName: 'New User',
+                email: 'blocked@test.local',
+                password: 'Password123!',
+                role: 'USER',
+            })
+            .expect(403);
     });
 });

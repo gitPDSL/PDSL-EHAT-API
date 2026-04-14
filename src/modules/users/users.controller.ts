@@ -11,6 +11,7 @@ import { In } from 'typeorm';
 import { TimesheetService } from '../timesheets/services/timesheet.service';
 import { ProjectUserService } from '../projectUsers/services/project-user.service';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -20,10 +21,11 @@ export class UsersController {
         private timesheetService: TimesheetService,
         private projectUserService: ProjectUserService,
     ) { }
-    @ApiOperation({ summary: 'Create a new user' })
+    @ApiOperation({ summary: 'Create a new user (admin only)' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateUserDto })
     @ApiResponseWrapper(UserEntity)
+    @Roles('ADMIN')
     @Post()
     create(
         @Req() req: Request,
@@ -55,6 +57,7 @@ export class UsersController {
             query.relations = query.relations.split(',').filter(a => a);
         return this.userService.findById(id, false, query.relations || []);
     }
+    @Roles('ADMIN')
     @Put('bulk-update')
     async bulkUpdate(
         @Req() req: Request,
@@ -68,10 +71,11 @@ export class UsersController {
         return this.userService.bulkUpdate(query, updateUserDto, req['user']);
     }
 
-    @ApiOperation({ summary: 'Update user' })
+    @ApiOperation({ summary: 'Update user (admin only)' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateUserDto })
     @ApiResponseWrapper(UserEntity)
+    @Roles('ADMIN')
     @Put(':id')
     update(
         @Req() req: Request,
@@ -85,9 +89,10 @@ export class UsersController {
     }
 
 
-    @ApiOperation({ summary: 'Delete user' })
+    @ApiOperation({ summary: 'Delete user (admin only)' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN')
     @Delete(':id')
     async delete(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
         // console.log('hi-----------------------------------')

@@ -7,6 +7,7 @@ import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { ProjectUserService } from '../projectUsers/services/project-user.service';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @Controller('projects')
 export class ProjectsController {
     private readonly logger = new Logger(ProjectsController.name);
@@ -14,10 +15,11 @@ export class ProjectsController {
         private projectService: ProjectService,
         private projectUserService: ProjectUserService
     ) { }
-    @ApiOperation({ summary: 'Create a new project' })
+    @ApiOperation({ summary: 'Create a new project (admin only)' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectDto })
     @ApiResponseWrapper(ProjectEntity)
+    @Roles('ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createProjectDto: CreateProjectDto, @Ip() ip: string): Promise<any> {
         createProjectDto.createdBy = req['user'].id;
@@ -44,10 +46,11 @@ export class ProjectsController {
         return this.projectService.findById(id);
     }
 
-    @ApiOperation({ summary: 'Update project' })
+    @ApiOperation({ summary: 'Update project (admin only)' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectDto })
     @ApiResponseWrapper(ProjectEntity)
+    @Roles('ADMIN')
     @Put(':id')
     async update(@Req() req: Request, @Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string, @Body() updateProjectDto: UpdateProjectDto, @Ip() ip: string): Promise<any> {
         if (id && query.removeProjectUser)
@@ -60,9 +63,10 @@ export class ProjectsController {
         return this.projectService.update(id, updateProjectDto, req['user']);
     }
 
-    @ApiOperation({ summary: 'Delete project' })
+    @ApiOperation({ summary: 'Delete project (admin only)' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.projectService.remove(id);

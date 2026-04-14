@@ -110,9 +110,20 @@ export class TimesheetService {
         const timesheetData: any = data;
         // console.log('-------------------', query, userData)
         try {
-            const timesheets = await this.timesheetRepository.find({ where: query });
-            // console.log('====================', timesheets)
-            if (!timesheets) throw new NotFoundException('No user found matching the query.');
+            const allTimesheets = await this.timesheetRepository.find({
+                where: query,
+                relations: ['user', 'user.manager', 'project', 'project.manager'],
+            });
+            // console.log('====================', allTimesheets)
+            if (!allTimesheets) throw new NotFoundException('No user found matching the query.');
+            let timesheets = allTimesheets;
+            if (currentUser?.role?.id !== 'ADMIN') {
+                timesheets = allTimesheets.filter((ts: any) => {
+                    const projMgr = ts.project?.manager?.id;
+                    const lineMgr = ts.user?.manager?.id;
+                    return currentUser?.id === projMgr || currentUser?.id === lineMgr;
+                });
+            }
             if (currentUser && currentUser.id) {
                 timesheetData['updatedBy'] = currentUser;
             }

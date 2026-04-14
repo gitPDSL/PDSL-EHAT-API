@@ -50,3 +50,17 @@ export async function seedProject(dataSource: DataSource, manager: UserEntity): 
         manager,
     } as Partial<ProjectEntity>));
 }
+
+export async function seedRegularUser(dataSource: DataSource, emailPrefix: string) {
+    const userRepo = dataSource.getRepository(UserEntity);
+    const email = `${emailPrefix}-regular@test.local`;
+    const existing = await userRepo.findOne({ where: { email } });
+    if (existing) return existing;
+    return userRepo.save(userRepo.create({
+        email,
+        fullName: 'Regular Test User',
+        passwordHash: await bcrypt.hash(TEST_USER_PASSWORD, 10),
+        role: { id: 'USER' } as any,
+        status: ACCOUNT_STATUS.ACTIVE,
+    }));
+}

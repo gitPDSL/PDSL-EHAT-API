@@ -3,8 +3,9 @@ import { JwtModule } from '@nestjs/jwt';
 import configuration from './config/configuration';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerInterceptor } from './interceptors/logger.interceptor';
+import { RolesGuard } from './guards/roles.guard';
 import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware';
 import { AuthModule } from './modules/auth/auth.module';
@@ -69,6 +70,7 @@ import { HealthModule } from './modules/health/health.module';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransfromInterceptor },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 export class AppModule implements NestModule {

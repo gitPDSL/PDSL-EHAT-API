@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { TimesheetService } from './services/timesheet.service';
 import { Request } from 'express';
 import { CreateTimesheetDto, PartialCreateTimesheetDto, UpdateTimesheetDto } from './dto/timesheet.dto';
@@ -8,6 +8,8 @@ import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { Between, In } from 'typeorm';
 import moment from 'moment';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
+import { TimesheetApprovalGuard } from './guards/timesheet-approval.guard';
 // @Controller({ path: 'timesheets', host: ':api.example.com' }) get dynamic host with @PostParams()
 @Controller('timesheets')
 export class TimesheetsController {
@@ -90,10 +92,11 @@ export class TimesheetsController {
             query.relations = query.relations.split(',').filter(a => a);
         return this.timesheetService.findById(id, query.relations || []);
     }
-    @ApiOperation({ summary: 'Update timesheet' })
+    @ApiOperation({ summary: 'Bulk update timesheets (managers and admins only). Non-admins are filtered per row to the timesheets they manage.' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateTimesheetDto })
     @ApiResponseWrapper(TimesheetEntity)
+    @Roles('MANAGER', 'ADMIN')
     @Put('bulk-update')
     async bulkUpdate(
         @Req() req: Request,
@@ -106,10 +109,11 @@ export class TimesheetsController {
         }
         return this.timesheetService.bulkUpdate(query, updateTimesheetDto, req['user']);
     }
-    @ApiOperation({ summary: 'Update timesheet' })
+    @ApiOperation({ summary: 'Update timesheet. Status changes require project manager or line manager; edits to own entries require ownership.' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateTimesheetDto })
     @ApiResponseWrapper(TimesheetEntity)
+    @UseGuards(TimesheetApprovalGuard)
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateTimesheetDto: UpdateTimesheetDto, @Ip() ip: string): Promise<any> {
         return this.timesheetService.update(id, updateTimesheetDto, req['user']);
