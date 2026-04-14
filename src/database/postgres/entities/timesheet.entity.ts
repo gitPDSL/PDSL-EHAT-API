@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  VersionColumn,
 } from 'typeorm';
 import { UserEntity } from './user.entity'; // Adjust paths as needed
 import { TimesheetStatusEntity } from './timesheet-status.entity';
@@ -68,6 +69,9 @@ export class TimesheetEntity {
   @ApiProperty()
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;
+  @ApiProperty({ description: 'Optimistic locking version; increments on each save' })
+  @VersionColumn({ default: 1 })
+  version: number;
   @ApiProperty()
   @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'created_by' })

@@ -81,6 +81,27 @@ export class UserService {
             throw error;
         }
     }
+    private async assertNoManagerCycle(userId: string, newManagerId: string): Promise<void> {
+        if (userId === newManagerId) {
+            throw new BadRequestException('A user cannot be their own manager');
+        }
+        let currentId: string | null = newManagerId;
+        const visited = new Set<string>();
+        while (currentId) {
+            if (currentId === userId) {
+                throw new BadRequestException('Assigning this manager would create a circular manager relationship');
+            }
+            if (visited.has(currentId)) {
+                throw new BadRequestException('Existing manager chain already contains a cycle');
+            }
+            visited.add(currentId);
+            const mgr: any = await this.userRepository.findOne({
+                where: { id: currentId },
+                relations: ['manager'],
+            });
+            currentId = mgr?.manager?.id ?? null;
+        }
+    }
     async update(id: string, data: Partial<UpdateUserDto>, currentUser: UserEntity | null = null) {
         const userData: any = data;
         try {
@@ -93,8 +114,10 @@ export class UserService {
             }
             if (userData.role)
                 userData.role = { id: userData.role };
-            if (userData.manager)
+            if (userData.manager) {
+                await this.assertNoManagerCycle(id, userData.manager);
                 userData.manager = { id: userData.manager };
+            }
             if (userData.department)
                 userData.department = { id: userData.department };
             let user = await this.userRepository.findOne({ where: { id } }) || {};
