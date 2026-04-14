@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DepartmentEntity } from 'src/database/postgres/entities/department.entity';
 import { Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()
 export class DepartmentService {
+    private readonly logger = new Logger(DepartmentService.name);
     constructor(
         @InjectRepository(DepartmentEntity) private readonly departmentRepository: Repository<DepartmentEntity>,
 
@@ -20,7 +21,7 @@ export class DepartmentService {
             const department = await this.departmentRepository.save(await this.departmentRepository.create(departmentData))
             return department;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -44,7 +45,7 @@ export class DepartmentService {
             // console.log('update department', department)
             return department;
         } catch (error) {
-            console.log('error-----', error, departmentData)
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }

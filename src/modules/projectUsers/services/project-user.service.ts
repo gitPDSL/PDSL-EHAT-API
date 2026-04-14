@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
 import { Repository } from 'typeorm';
@@ -8,6 +8,7 @@ import { CreateProjectDto } from 'src/modules/projects/dto/project.dto';
 
 @Injectable()
 export class ProjectUserService {
+    private readonly logger = new Logger(ProjectUserService.name);
     constructor(
         @InjectRepository(ProjectUserEntity) private readonly projectUserRepository: Repository<ProjectUserEntity>
     ) {
@@ -26,7 +27,7 @@ export class ProjectUserService {
             const projectUser = await this.projectUserRepository.save(await this.projectUserRepository.create(projectUserData))
             return projectUser;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -54,7 +55,7 @@ export class ProjectUserService {
             // console.log('update projectUser', projectUser)
             return projectUser;
         } catch (error) {
-            console.log('error-----', error, data)
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -90,7 +91,7 @@ export class ProjectUserService {
             }
             return projectUserList;
         } catch (err) {
-            console.log('--=--==-', err);
+            this.logger.error(err?.message ?? String(err), err?.stack);
             return []
         }
     }

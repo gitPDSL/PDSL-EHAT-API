@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Logger, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { ProjectService } from './services/project.service';
 import { Request } from 'express';
 import { CreateProjectDto, PartialCreateProjectDto, UpdateProjectDto } from './dto/project.dto';
@@ -9,6 +9,7 @@ import { ProjectUserService } from '../projectUsers/services/project-user.servic
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
 @Controller('projects')
 export class ProjectsController {
+    private readonly logger = new Logger(ProjectsController.name);
     constructor(
         private projectService: ProjectService,
         private projectUserService: ProjectUserService
@@ -54,7 +55,7 @@ export class ProjectsController {
             try {
                 await this.projectUserService.removeMany({ projectId: id });
             } catch (er) {
-                console.error('-=-===-==--===-----', er)
+                this.logger.error(er?.message ?? String(er), er?.stack);
             }
         return this.projectService.update(id, updateProjectDto, req['user']);
     }

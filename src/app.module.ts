@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerInterceptor } from './interceptors/logger.interceptor';
 import { AuthMiddleware } from './middlewares/auth/auth.middleware';
+import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware';
 import { AuthModule } from './modules/auth/auth.module';
 import { TransfromInterceptor } from './interceptors/transform.interceptor';
 import { MailModule } from './mail/mail.module';
@@ -25,6 +26,7 @@ import { LeavesModule } from './modules/leave/leaves.module';
 import { LeaveBalancesModule } from './modules/leaveBalance/leave-balances.module';
 import { LeaveTypesModule } from './modules/leaveType/leave-types.module';
 import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -60,7 +62,8 @@ import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module
     LeavesModule,
     LeaveBalancesModule,
     LeaveTypesModule,
-    LeaveStatusesModule
+    LeaveStatusesModule,
+    HealthModule
   ],
   controllers: [],
   providers: [
@@ -70,6 +73,7 @@ import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(AuthMiddleware).exclude({ path: '/auth/login', method: RequestMethod.POST }, { path: '/auth', method: RequestMethod.POST }, { path: '/auth/verify/(.*)', method: RequestMethod.PUT }, { path: '/auth/forgot-password', method: RequestMethod.POST }, { path: '/auth/reset-password/(.*)', method: RequestMethod.PUT }, { path: '/roles', method: RequestMethod.GET }).forRoutes('*')
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+    consumer.apply(AuthMiddleware).exclude({ path: '/auth/login', method: RequestMethod.POST }, { path: '/auth', method: RequestMethod.POST }, { path: '/auth/verify/(.*)', method: RequestMethod.PUT }, { path: '/auth/forgot-password', method: RequestMethod.POST }, { path: '/auth/reset-password/(.*)', method: RequestMethod.PUT }, { path: '/roles', method: RequestMethod.GET }, { path: '/health', method: RequestMethod.GET }, { path: '/ready', method: RequestMethod.GET }).forRoutes('*')
   }
 }

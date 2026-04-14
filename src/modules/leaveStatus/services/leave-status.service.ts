@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveStatusEntity } from 'src/database/postgres/entities/leave-status.entity';
 import { Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()
 export class LeaveStatusService {
+    private readonly logger = new Logger(LeaveStatusService.name);
     constructor(
         @InjectRepository(LeaveStatusEntity) private readonly leaveStatusRepository: Repository<LeaveStatusEntity>
     ) {
@@ -19,7 +20,7 @@ export class LeaveStatusService {
             const leaveStatus = await this.leaveStatusRepository.save(await this.leaveStatusRepository.create(leaveStatusData))
             return leaveStatus;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -42,7 +43,7 @@ export class LeaveStatusService {
             // console.log('update leaveStatus', leaveStatus)
             return leaveStatus;
         } catch (error) {
-            console.log('error-----', error, leaveStatusData)
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }

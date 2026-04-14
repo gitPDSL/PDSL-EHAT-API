@@ -1,21 +1,22 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MailService implements OnModuleInit {
+    private readonly logger = new Logger(MailService.name);
     constructor(
         private readonly mailerService: MailerService,
         private configService: ConfigService
     ) { }
     async onModuleInit() {
-        console.log('Testing SMTP connection...');
+        this.logger.log('Testing SMTP connection...');
         try {
             await this.mailerService.verifyAllTransporters();
-            console.log('✅ SMTP server is ready');
+            this.logger.log('SMTP server is ready');
 
         } catch (error) {
-            console.log('❌ SMTP connection failed:', error);
+            this.logger.error(`SMTP connection failed: ${error?.message ?? error}`, error?.stack);
         }
     }
 

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { OtpEntity } from 'src/database/postgres/entities/otp.entity';
 import { Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 @Injectable()
 export class OtpService {
+    private readonly logger = new Logger(OtpService.name);
     constructor(
         @InjectRepository(OtpEntity) private readonly otpRepository: Repository<OtpEntity>
     ) {
@@ -19,7 +20,7 @@ export class OtpService {
             const otp = await this.otpRepository.save(await this.otpRepository.create(otpData))
             return otp;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -42,7 +43,7 @@ export class OtpService {
             // console.log('update otp', otp)
             return otp;
         } catch (error) {
-            console.log('error-----', error, otpData)
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }

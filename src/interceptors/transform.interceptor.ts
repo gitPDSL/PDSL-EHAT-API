@@ -1,10 +1,11 @@
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from "@nestjs/common";
 import { map, Observable } from "rxjs";
 
 @Injectable()
 export class TransfromInterceptor implements NestInterceptor {
+    private readonly logger = new Logger(TransfromInterceptor.name);
     intercept(context: ExecutionContext, next: CallHandler<any>): Observable<any> | Promise<Observable<any>> {
-        console.log('Request completed on', process.env.TZ, new Date().toString())
+        this.logger.debug(`Request completed on ${process.env.TZ} ${new Date().toString()}`)
         return next.handle().pipe(map((data) => ({
             ...{
                 meta: {

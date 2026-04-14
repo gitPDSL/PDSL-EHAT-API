@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Logger, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { DepartmentService } from './services/department.service';
 import { Request } from 'express';
 import { CreateDepartmentDto, PartialCreateDepartmentDto, UpdateDepartmentDto } from './dto/department.dto';
@@ -10,6 +10,7 @@ import { QueryTransformTypeorm } from 'src/utills/common.utill';
 
 @Controller('departments')
 export class DepartmentsController {
+    private readonly logger = new Logger(DepartmentsController.name);
     constructor(
         private departmentService: DepartmentService,
         private userService: UserService
@@ -57,7 +58,7 @@ export class DepartmentsController {
             try {
                 await this.userService.bulkUpdate({ department: id }, { department: null }, req['user']);
             } catch (er) {
-                console.error('-=-===-==--===-----', er)
+                this.logger.error(er?.message ?? String(er), er?.stack);
             }
         return this.departmentService.update(id, updateDepartmentDto, req['user']);
     }
@@ -70,7 +71,7 @@ export class DepartmentsController {
         try {
             await this.userService.bulkUpdate({ department: id }, { department: null }, req['user']);
         } catch (er) {
-            console.error('-=-===-==--===-----', er)
+            this.logger.error(er?.message ?? String(er), er?.stack);
         }
         return this.departmentService.remove(id);
     }

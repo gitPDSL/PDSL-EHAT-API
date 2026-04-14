@@ -1,10 +1,11 @@
-import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from 'src/modules/users/services/user.service';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
+  private readonly logger = new Logger(AuthMiddleware.name);
   constructor(
     private jwtService: JwtService,
     private userService: UserService
@@ -26,7 +27,7 @@ export class AuthMiddleware implements NestMiddleware {
           // console.log(decoded, new Date(decoded.exp * 1000), new Date())
           req['user'] = await this.userService.findById(decoded.sub);
         } catch (error) {
-          console.error('JWT verification failed:', error.errors || error.message);
+          this.logger.error(`JWT verification failed: ${error.errors || error.message}`);
           throw new UnauthorizedException(error.errors || error.message || 'Invalid token');
         }
       }

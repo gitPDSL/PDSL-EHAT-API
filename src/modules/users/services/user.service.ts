@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
@@ -10,6 +10,7 @@ import { ACCOUNT_STATUS } from 'src/constants/account.constants';
 
 @Injectable()
 export class UserService {
+    private readonly logger = new Logger(UserService.name);
     constructor(
         @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
         private mailService: MailService,
@@ -69,7 +70,7 @@ export class UserService {
                 await this.sendVerificationMail(newUser);
             return user;
         } catch (error) {
-            console.log(error);
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -103,7 +104,7 @@ export class UserService {
             // console.log('update user', user)
             return await this.userRepository.findOne({ where: { id } }) || {};
         } catch (error) {
-            console.log('error-----', error, userData)
+            this.logger.error(error?.message ?? String(error), error?.stack);
             if (error.name == 'ValidationError') {
                 throw new BadRequestException(error.errors);
             }
@@ -153,7 +154,7 @@ export class UserService {
             }
             return userList;
         } catch (err) {
-            console.log('--=--==-', err);
+            this.logger.error(err?.message ?? String(err), err?.stack);
             return []
         }
     }

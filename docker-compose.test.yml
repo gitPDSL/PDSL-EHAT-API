@@ -1,0 +1,12 @@
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: ehat-postgres-test
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ehat_test
+      POSTGRES_PASSWORD: ehat_test
+      POSTGRES_DB: ehat_test
+    tmpfs:
+      - /var/lib/postgresql/data

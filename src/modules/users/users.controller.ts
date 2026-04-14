@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Logger, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { UserService } from './services/user.service';
 import { Request } from 'express';
 import { CreateUserDto, PartialCreateUserDto, UpdateUserDto } from './dto/user.dto';
@@ -14,6 +14,7 @@ import { QueryTransformTypeorm } from 'src/utills/common.utill';
 
 @Controller('users')
 export class UsersController {
+    private readonly logger = new Logger(UsersController.name);
     constructor(
         private userService: UserService,
         private timesheetService: TimesheetService,
@@ -94,7 +95,7 @@ export class UsersController {
             await this.timesheetService.removeMany({ userId: id });
             await this.projectUserService.removeMany({ userId: id });
         } catch (er) {
-            console.error('-=-===-==--===-----', er)
+            this.logger.error(er?.message ?? String(er), er?.stack);
         }
         return this.userService.remove(id, req['user']);
     }
