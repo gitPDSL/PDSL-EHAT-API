@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Weekly approval digest</title>
+  <style>
+    .container { max-width: 600px; margin: auto; font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px; color: #333; }
+    .button { display: inline-block; background-color: #007bff; color: #fff !important; padding: 12px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold; }
+    .total { font-size: 24px; font-weight: bold; color: #007bff; margin: 16px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    th, td { border: 1px solid #eee; padding: 8px; text-align: left; font-size: 13px; }
+    th { background-color: #f7f7f7; }
+    .footer { margin-top: 30px; font-size: 12px; color: #888; }
+    p { line-height: 1.6; font-size: 14px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello {{managerName}},</h2>
+    <p>Your weekly approval digest:</p>
+    <div class="total">{{totalPending}} pending timesheets</div>
+    {{#if pendingBreakdown.length}}
+    <table>
+      <thead>
+        <tr><th>Employee</th><th>Pending count</th></tr>
+      </thead>
+      <tbody>
+        {{#each pendingBreakdown}}
+        <tr>
+          <td>{{this.employeeName}}</td>
+          <td>{{this.pendingCount}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{/if}}
+    <a href="{{link}}" class="button">Open approvals</a>
+    <div class="footer">
+      <p>Sent by {{appName}}</p>
+    </div>
+  </div>
+</body>
+</html>

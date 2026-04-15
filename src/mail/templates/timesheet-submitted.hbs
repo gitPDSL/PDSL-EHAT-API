@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Timesheet submitted</title>
+  <style>
+    .container { max-width: 600px; margin: auto; font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 8px; color: #333; }
+    .button { display: inline-block; background-color: #007bff; color: #fff !important; padding: 12px 20px; text-decoration: none; border-radius: 5px; margin-top: 20px; font-weight: bold; }
+    .footer { margin-top: 30px; font-size: 12px; color: #888; }
+    p { line-height: 1.6; font-size: 14px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello {{managerName}},</h2>
+    <p><strong>{{employeeName}}</strong> has submitted a timesheet for week {{weekNumber}} of {{year}} and is waiting for your approval.</p>
+    <a href="{{link}}" class="button">Review timesheet</a>
+    <div class="footer">
+      <p>You are receiving this because you are the project manager or line manager for this entry.</p>
+      <p>Sent by {{appName}}</p>
+    </div>
+  </div>
+</body>
+</html>

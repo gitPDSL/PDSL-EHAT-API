@@ -31,6 +31,7 @@ import { LeaveStatusesModule } from './modules/leaveStatus/leave-statuses.module
 import { HealthModule } from './modules/health/health.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -70,7 +71,8 @@ import { PayrollModule } from './modules/payroll/payroll.module';
     LeaveStatusesModule,
     HealthModule,
     AuditModule,
-    PayrollModule
+    PayrollModule,
+    NotificationsModule
   ],
   controllers: [],
   providers: [
