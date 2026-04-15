@@ -7,6 +7,7 @@ import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity
 import { UserEntity, ACCOUNT_STATUS } from 'src/database/postgres/entities/user.entity';
 import { MailService } from 'src/mail/mail.service';
 import { NotificationsService } from 'src/modules/notifications/notifications.service';
+import { HolidaysService } from 'src/modules/holidays/services/holidays.service';
 
 const UK_TZ = 'Europe/London';
 
@@ -19,6 +20,7 @@ export class TimesheetCronService {
         @InjectRepository(UserEntity) private readonly userRepository: Repository<UserEntity>,
         private readonly mailService: MailService,
         private readonly notifications: NotificationsService,
+        private readonly holidaysService: HolidaysService,
     ) { }
 
     // Friday 15:00 UK time
@@ -30,12 +32,22 @@ export class TimesheetCronService {
         const year = now.isoWeekYear();
         const startOfWeek = now.clone().startOf('isoWeek');
 
-        const weekdays: Array<{ date: string; label: string }> = [];
+        const allWeekdays: Array<{ date: string; label: string }> = [];
         for (let i = 0; i < 5; i++) {
             const day = startOfWeek.clone().add(i, 'days');
-            weekdays.push({ date: day.format('YYYY-MM-DD'), label: day.format('ddd MMM D') });
+            allWeekdays.push({ date: day.format('YYYY-MM-DD'), label: day.format('ddd MMM D') });
         }
-        const weekdayDateSet = new Set(weekdays.map((w) => w.date));
+
+        const holidaySet = await this.holidaysService.findDatesInRange(
+            allWeekdays[0].date,
+            allWeekdays[allWeekdays.length - 1].date,
+            'GB',
+        );
+        const weekdays = allWeekdays.filter((w) => !holidaySet.has(w.date));
+        if (weekdays.length === 0) {
+            this.logger.log('All weekdays this week are holidays; skipping weekly reminder');
+            return;
+        }
 
         const users = await this.userRepository.find({
             where: { status: ACCOUNT_STATUS.ACTIVE },

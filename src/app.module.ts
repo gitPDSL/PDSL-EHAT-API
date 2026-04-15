@@ -33,6 +33,7 @@ import { AuditModule } from './modules/audit/audit.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ExportsModule } from './modules/exports/exports.module';
+import { HolidaysModule } from './modules/holidays/holidays.module';
 
 @Module({
   imports: [
@@ -74,7 +75,8 @@ import { ExportsModule } from './modules/exports/exports.module';
     AuditModule,
     PayrollModule,
     NotificationsModule,
-    ExportsModule
+    ExportsModule,
+    HolidaysModule
   ],
   controllers: [],
   providers: [
