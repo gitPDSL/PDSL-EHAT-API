@@ -9,6 +9,8 @@ import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
 import { ACCOUNT_STATUS } from 'src/constants/account.constants';
 import { AuditService } from 'src/modules/audit/audit.service';
 import { LeaveBalanceService } from 'src/modules/leaveBalance/services/leave-balance.service';
+import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
+import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
 
 @Injectable()
 export class UserService {
@@ -325,6 +327,61 @@ export class UserService {
             }
             throw error;
         }
+    }
+
+    async dataExport(id: string) {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            relations: ['role', 'department', 'manager'],
+            withDeleted: true,
+        });
+        if (!user) throw new NotFoundException('User not found');
+        const { passwordHash, refreshToken, ...safe } = user as any;
+        const timesheets = await this.dataSource
+            .getRepository(TimesheetEntity)
+            .find({ where: { userId: id } });
+        const leaves = await this.dataSource
+            .getRepository(LeaveEntity)
+            .find({ where: { user: { id } } as any, relations: ['leaveType', 'status'] });
+        const auditEntries = await this.auditService.findAllForUser(id);
+        return {
+            generatedAt: new Date().toISOString(),
+            user: safe,
+            timesheets,
+            leaves,
+            auditEntries,
+        };
+    }
+
+    async erase(id: string, currentUser: any) {
+        const user: any = await this.userRepository.findOne({
+            where: { id },
+            withDeleted: true,
+        });
+        if (!user) throw new NotFoundException('User not found');
+        const before = {
+            fullName: user.fullName,
+            email: user.email,
+            hadPassword: !!user.passwordHash,
+            hadRefreshToken: !!user.refreshToken,
+        };
+        user.fullName = '[erased]';
+        user.email = null;
+        user.passwordHash = null;
+        user.refreshToken = null;
+        if (!user.deletedAt) {
+            user.deletedAt = new Date();
+        }
+        await this.userRepository.save(user);
+        await this.auditService.log({
+            actorId: currentUser?.id ?? null,
+            action: 'user.erase',
+            entityType: 'User',
+            entityId: id,
+            before,
+            after: { fullName: '[erased]', email: null, hadPassword: false, hadRefreshToken: false },
+        });
+        return { message: 'User anonymized' };
     }
 
 }

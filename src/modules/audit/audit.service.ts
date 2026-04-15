@@ -49,6 +49,16 @@ export class AuditService {
         return { items, total, limit, offset };
     }
 
+    async findAllForUser(userId: string) {
+        return this.repo.find({
+            where: [
+                { actorId: userId },
+                { entityType: 'User', entityId: userId },
+            ],
+            order: { createdAt: 'DESC' },
+        });
+    }
+
     async log(input: AuditLogInput): Promise<void> {
         try {
             await this.repo.save(

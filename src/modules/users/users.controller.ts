@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Ip, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { UserService } from './services/user.service';
 import { Request } from 'express';
 import { CreateUserDto, PartialCreateUserDto, UpdateUserDto } from './dto/user.dto';
@@ -109,5 +109,28 @@ export class UsersController {
     @Post(':id/force-verify')
     forceVerify(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.userService.forceVerify(id, req['user']);
+    }
+
+    @ApiOperation({ summary: 'GDPR data export. Admin can export any user; any authenticated user can export their own record. Bundles the user row (passwordHash and refreshToken stripped), timesheets, leaves, and related audit log entries as JSON.' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Get(':id/data-export')
+    async dataExport(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        const caller = req['user'];
+        const isAdmin = caller?.role?.id === 'ADMIN';
+        const isSelf = caller?.id === id;
+        if (!isAdmin && !isSelf) {
+            throw new ForbiddenException('You can only export your own user data');
+        }
+        return this.userService.dataExport(id);
+    }
+
+    @ApiOperation({ summary: 'GDPR erasure (admin only). Anonymizes the user in place: fullName is set to [erased], email and credentials are cleared, and the row is soft-deleted. Historical timesheet and audit rows are preserved for accounting and legal record-keeping.' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Roles('ADMIN')
+    @Delete(':id/erase')
+    async erase(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        return this.userService.erase(id, req['user']);
     }
 }
