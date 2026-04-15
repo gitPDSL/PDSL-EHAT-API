@@ -5,6 +5,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    Column,
 } from 'typeorm';
 import { ProjectEntity } from './project.entity';
 import { UserEntity } from './user.entity';
@@ -18,6 +19,9 @@ export class ProjectUserEntity {
     @ApiProperty()
     @PrimaryColumn('uuid', { name: 'user_id' })
     userId: string;
+    @ApiProperty({ description: 'Billing rate for this user on this project, denominated in the client\'s currency.' })
+    @Column({ type: 'numeric', precision: 12, scale: 2, name: 'hourly_rate', default: 0 })
+    hourlyRate: number;
     @ApiProperty()
     @CreateDateColumn({
         type: 'timestamp',

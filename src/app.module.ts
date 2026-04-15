@@ -32,6 +32,7 @@ import { HealthModule } from './modules/health/health.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ExportsModule } from './modules/exports/exports.module';
 
 @Module({
   imports: [
@@ -72,7 +73,8 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     HealthModule,
     AuditModule,
     PayrollModule,
-    NotificationsModule
+    NotificationsModule,
+    ExportsModule
   ],
   controllers: [],
   providers: [

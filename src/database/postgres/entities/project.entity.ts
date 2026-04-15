@@ -20,6 +20,9 @@ export class ProjectEntity {
     @ApiProperty()
     @Column({ type: 'int', name: 'allocated_hours', default: 0 })
     allocatedHours: number;
+    @ApiProperty({ description: 'Whether hours on this project are billable by default. Can be overridden per timesheet entry.' })
+    @Column({ type: 'boolean', default: true })
+    billable: boolean;
     @ApiProperty()
     @Index('idx_projects_client_id')
     @ManyToOne(() => ClientEntity, { nullable: true })

@@ -43,6 +43,9 @@ export class TimesheetEntity {
   @ApiProperty()
   @Column('float', { default: 0, name: 'hours' })
   hours?: Number;
+  @ApiProperty({ description: 'Override for the project default billable flag. Null means inherit from project.billable.' })
+  @Column({ type: 'boolean', nullable: true })
+  billable?: boolean | null;
   @ApiProperty()
   @Column('timestamp', { nullable: true, default: () => 'now()', name: 'submitted_at' })
   submittedAt?: Date;

@@ -14,6 +14,9 @@ export class ClientEntity {
     @ApiProperty()
     @Column()
     description: string;
+    @ApiProperty({ description: 'ISO 4217 currency code used for this client\'s invoices. Defaults to GBP.' })
+    @Column({ type: 'varchar', length: 3, default: 'GBP' })
+    currency: string;
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;
