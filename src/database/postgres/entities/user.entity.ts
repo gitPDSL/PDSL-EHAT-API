@@ -89,6 +89,18 @@ export class UserEntity {
     @Column({ type: 'text', nullable: true })
     refreshToken: string | null
 
+    @ApiProperty({ required: false, nullable: true, description: 'User id that this user delegates approval authority to during an active window.' })
+    @Column({ type: 'uuid', name: 'delegate_manager_id', nullable: true })
+    delegateManagerId: string | null;
+
+    @ApiProperty({ required: false, nullable: true })
+    @Column({ type: 'date', name: 'delegate_from', nullable: true })
+    delegateFrom: string | null;
+
+    @ApiProperty({ required: false, nullable: true })
+    @Column({ type: 'date', name: 'delegate_to', nullable: true })
+    delegateTo: string | null;
+
     // Reverse relation for manager → subordinates
     @OneToMany(() => UserEntity, (user) => user.manager)
     subordinates: UserEntity[];

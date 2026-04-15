@@ -11,6 +11,15 @@ import { TimesheetService } from '../services/timesheet.service';
 export class TimesheetApprovalGuard implements CanActivate {
     constructor(private readonly timesheetService: TimesheetService) { }
 
+    private isActiveDelegateFor(callerId: string, manager: any): boolean {
+        if (!manager) return false;
+        if (manager.delegateManagerId !== callerId) return false;
+        const today = new Date().toISOString().slice(0, 10);
+        if (manager.delegateFrom && today < String(manager.delegateFrom).slice(0, 10)) return false;
+        if (manager.delegateTo && today > String(manager.delegateTo).slice(0, 10)) return false;
+        return true;
+    }
+
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const req = context.switchToHttp().getRequest();
         const user = req.user;
@@ -40,13 +49,16 @@ export class TimesheetApprovalGuard implements CanActivate {
             req.body && Object.prototype.hasOwnProperty.call(req.body, 'status');
 
         if (changesStatus) {
-            const projectManagerId = timesheet.project?.manager?.id;
-            const lineManagerId = timesheet.user?.manager?.id;
-            if (user.id === projectManagerId || user.id === lineManagerId) {
+            const projectManager = timesheet.project?.manager;
+            const lineManager = timesheet.user?.manager;
+            if (user.id === projectManager?.id || user.id === lineManager?.id) {
+                return true;
+            }
+            if (this.isActiveDelegateFor(user.id, projectManager) || this.isActiveDelegateFor(user.id, lineManager)) {
                 return true;
             }
             throw new ForbiddenException(
-                'Only the project manager or the employee line manager can change timesheet status',
+                'Only the project manager or the employee line manager (or an active delegate) can change timesheet status',
             );
         }
 
