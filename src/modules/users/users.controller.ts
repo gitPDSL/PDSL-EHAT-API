@@ -92,4 +92,22 @@ export class UsersController {
     async delete(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.userService.remove(id, req['user']);
     }
+
+    @ApiOperation({ summary: 'Resend the account verification email (admin only). Use when a user is stuck in PENDING and the original verification email was lost or bounced.' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Roles('ADMIN')
+    @Post(':id/resend-verification')
+    resendVerification(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        return this.userService.resendVerification(id, req['user']);
+    }
+
+    @ApiOperation({ summary: 'Force-verify a user (admin only). Bypasses the email flow and flips status to ACTIVE. Intended for use when SMTP is down and a user is stuck in PENDING.' })
+    @ApiBearerAuth()
+    @ApiResponseWrapper(class { })
+    @Roles('ADMIN')
+    @Post(':id/force-verify')
+    forceVerify(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
+        return this.userService.forceVerify(id, req['user']);
+    }
 }

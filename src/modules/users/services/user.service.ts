@@ -53,6 +53,46 @@ export class UserService {
         await this.mailService.sendForgotPassword(user.email, user.fullName, process.env.APP_URL + '/reset-password/' + token, process.env.APP_URL + '/');
 
     }
+
+    async resendVerification(id: string, currentUser: UserEntity | null = null) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) throw new NotFoundException('User not found');
+        if (!user.email) throw new BadRequestException('User has no email on record');
+        if (user.status === ACCOUNT_STATUS.ACTIVE) {
+            throw new BadRequestException('User is already active, no verification needed');
+        }
+        await this.sendVerificationMail(user);
+        await this.auditService.log({
+            actorId: currentUser?.id ?? null,
+            action: 'user.verification.resend',
+            entityType: 'User',
+            entityId: id,
+            before: { status: user.status },
+            after: { status: user.status },
+        });
+        return { message: 'Verification email resent' };
+    }
+
+    async forceVerify(id: string, currentUser: UserEntity | null = null) {
+        const user = await this.userRepository.findOne({ where: { id } });
+        if (!user) throw new NotFoundException('User not found');
+        if (user.status === ACCOUNT_STATUS.ACTIVE) {
+            return { message: 'User is already active' };
+        }
+        const prevStatus = user.status;
+        (user as any).status = ACCOUNT_STATUS.ACTIVE;
+        (user as any).updatedBy = currentUser;
+        await this.userRepository.save(user);
+        await this.auditService.log({
+            actorId: currentUser?.id ?? null,
+            action: 'user.verification.force',
+            entityType: 'User',
+            entityId: id,
+            before: { status: prevStatus },
+            after: { status: ACCOUNT_STATUS.ACTIVE },
+        });
+        return { message: 'User force-verified and activated' };
+    }
     async create(data: Partial<CreateUserDto>, currentUser: UserEntity | null = null) {
         try {
             const userData: any = data;
