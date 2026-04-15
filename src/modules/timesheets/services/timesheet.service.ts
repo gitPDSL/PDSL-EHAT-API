@@ -8,6 +8,8 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
 import { AuditService } from 'src/modules/audit/audit.service';
 import { PayrollService } from 'src/modules/payroll/services/payroll.service';
+import { MailService } from 'src/mail/mail.service';
+import { NotificationsService } from 'src/modules/notifications/notifications.service';
 
 @Injectable()
 export class TimesheetService {
@@ -17,7 +19,89 @@ export class TimesheetService {
         @InjectDataSource() private readonly dataSource: DataSource,
         private readonly auditService: AuditService,
         private readonly payrollService: PayrollService,
+        private readonly mailService: MailService,
+        private readonly notificationsService: NotificationsService,
     ) {
+    }
+
+    private async dispatchStatusNotification(
+        timesheetId: string,
+        newStatusId: string,
+        rejectionReason: string | null,
+        actor: any,
+    ): Promise<void> {
+        try {
+            const ts: any = await this.timesheetRepository.findOne({
+                where: { id: timesheetId },
+                relations: ['user', 'user.manager', 'project', 'project.manager'],
+            });
+            if (!ts) return;
+            const webUrl = process.env.APP_URL ?? '';
+            if (newStatusId === 'SUBMITTED') {
+                const recipient = ts.project?.manager ?? ts.user?.manager;
+                if (!recipient?.email) return;
+                const recipientName = recipient.fullName ?? 'there';
+                const employeeName = ts.user?.fullName ?? 'An employee';
+                const link = `${webUrl}/approvals`;
+                await this.mailService.sendTimesheetSubmitted(
+                    recipient.email,
+                    recipientName,
+                    employeeName,
+                    ts.weekNumber,
+                    ts.year,
+                    link,
+                );
+                await this.notificationsService.create({
+                    userId: recipient.id,
+                    type: 'timesheet.submitted',
+                    title: 'Timesheet awaiting approval',
+                    body: `${employeeName} submitted a timesheet for week ${ts.weekNumber}.`,
+                    metadata: { timesheetId, employeeId: ts.user?.id, link },
+                });
+            } else if (newStatusId === 'APPROVED') {
+                if (!ts.user?.email) return;
+                const approverName = actor?.fullName ?? 'your manager';
+                await this.mailService.sendTimesheetApproved(
+                    ts.user.email,
+                    ts.user.fullName ?? 'there',
+                    approverName,
+                    ts.weekNumber,
+                    ts.year,
+                );
+                await this.notificationsService.create({
+                    userId: ts.user.id,
+                    type: 'timesheet.approved',
+                    title: `Week ${ts.weekNumber} approved`,
+                    body: `Your timesheet for week ${ts.weekNumber} of ${ts.year} was approved.`,
+                    metadata: { timesheetId, approverId: actor?.id },
+                });
+            } else if (newStatusId === 'REJECTED') {
+                if (!ts.user?.email) return;
+                const rejecterName = actor?.fullName ?? 'your manager';
+                const link = `${webUrl}/hours`;
+                await this.mailService.sendTimesheetRejected(
+                    ts.user.email,
+                    ts.user.fullName ?? 'there',
+                    rejecterName,
+                    ts.weekNumber,
+                    ts.year,
+                    rejectionReason ?? '',
+                    link,
+                );
+                await this.notificationsService.create({
+                    userId: ts.user.id,
+                    type: 'timesheet.rejected',
+                    title: `Week ${ts.weekNumber} rejected`,
+                    body: `Your timesheet for week ${ts.weekNumber} of ${ts.year} was rejected.${rejectionReason ? ' Reason: ' + rejectionReason : ''}`,
+                    metadata: { timesheetId, rejectionReason, link },
+                });
+            }
+        } catch (error) {
+            this.logger.error(
+                `Failed to dispatch notification for timesheet ${timesheetId} status=${newStatusId}: ${error?.message ?? error}`,
+                error?.stack,
+            );
+        }
     }
 
     private async assertNotInLockedPeriod(
@@ -133,6 +217,7 @@ export class TimesheetService {
                     before: { status: prevStatusId },
                     after: { status: newStatusId },
                 });
+                await this.dispatchStatusNotification(id, newStatusId, timesheet.rejectionReason ?? null, currentUser);
             }
             return timesheet;
         } catch (error) {
@@ -207,6 +292,12 @@ export class TimesheetService {
                             before: { status: prev },
                             after: { status: next },
                         });
+                        await this.dispatchStatusNotification(
+                            ts.id,
+                            next,
+                            (ts as any).rejectionReason ?? timesheetData.rejectionReason ?? null,
+                            currentUser,
+                        );
                     }
                 }
             }

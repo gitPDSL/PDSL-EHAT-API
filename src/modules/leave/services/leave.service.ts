@@ -6,6 +6,8 @@ import { UpdateLeaveDto } from '../dto/leave.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateLeaveDto } from '../dto/leave.dto';
 import { AuditService } from 'src/modules/audit/audit.service';
+import { MailService } from 'src/mail/mail.service';
+import { NotificationsService } from 'src/modules/notifications/notifications.service';
 
 @Injectable()
 export class LeaveService {
@@ -13,7 +15,108 @@ export class LeaveService {
     constructor(
         @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
         private readonly auditService: AuditService,
+        private readonly mailService: MailService,
+        private readonly notificationsService: NotificationsService,
     ) {
+    }
+
+    private formatDate(d: Date | string): string {
+        try {
+            const dt = typeof d === 'string' ? new Date(d) : d;
+            return dt.toISOString().slice(0, 10);
+        } catch {
+            return String(d);
+        }
+    }
+
+    private async dispatchSubmittedNotification(leaveId: string, actor: any): Promise<void> {
+        try {
+            const leave: any = await this.leaveRepository.findOne({
+                where: { id: leaveId },
+                relations: ['user', 'user.manager', 'leaveType'],
+            });
+            if (!leave?.user?.manager?.email) return;
+            const webUrl = process.env.APP_URL ?? '';
+            const managerName = leave.user.manager.fullName ?? 'there';
+            const employeeName = leave.user.fullName ?? 'An employee';
+            const leaveTypeName = leave.leaveType?.name ?? 'leave';
+            const startDate = this.formatDate(leave.startDate);
+            const endDate = this.formatDate(leave.endDate);
+            const link = `${webUrl}/manage-leaves`;
+            await this.mailService.sendLeaveSubmitted(
+                leave.user.manager.email,
+                managerName,
+                employeeName,
+                leaveTypeName,
+                startDate,
+                endDate,
+                link,
+            );
+            await this.notificationsService.create({
+                userId: leave.user.manager.id,
+                type: 'leave.submitted',
+                title: 'Leave request awaiting approval',
+                body: `${employeeName} requested ${leaveTypeName} from ${startDate} to ${endDate}.`,
+                metadata: { leaveId, employeeId: leave.user.id, link },
+            });
+        } catch (error) {
+            this.logger.error(
+                `Failed to dispatch leave.submitted notification for ${leaveId}: ${error?.message ?? error}`,
+                error?.stack,
+            );
+        }
+    }
+
+    private async dispatchStatusNotification(leaveId: string, newStatusId: string, actor: any): Promise<void> {
+        try {
+            const leave: any = await this.leaveRepository.findOne({
+                where: { id: leaveId },
+                relations: ['user', 'leaveType'],
+            });
+            if (!leave?.user?.email) return;
+            const employeeName = leave.user.fullName ?? 'there';
+            const leaveTypeName = leave.leaveType?.name ?? 'leave';
+            const startDate = this.formatDate(leave.startDate);
+            const endDate = this.formatDate(leave.endDate);
+            if (newStatusId === 'APPROVED') {
+                await this.mailService.sendLeaveApproved(
+                    leave.user.email,
+                    employeeName,
+                    leaveTypeName,
+                    startDate,
+                    endDate,
+                );
+                await this.notificationsService.create({
+                    userId: leave.user.id,
+                    type: 'leave.approved',
+                    title: 'Leave approved',
+                    body: `Your ${leaveTypeName} from ${startDate} to ${endDate} was approved.`,
+                    metadata: { leaveId },
+                });
+            } else if (newStatusId === 'REJECTED') {
+                const reason = leave.reason ?? null;
+                await this.mailService.sendLeaveRejected(
+                    leave.user.email,
+                    employeeName,
+                    leaveTypeName,
+                    startDate,
+                    endDate,
+                    reason,
+                );
+                await this.notificationsService.create({
+                    userId: leave.user.id,
+                    type: 'leave.rejected',
+                    title: 'Leave rejected',
+                    body: `Your ${leaveTypeName} from ${startDate} to ${endDate} was rejected.${reason ? ' Reason: ' + reason : ''}`,
+                    metadata: { leaveId, reason },
+                });
+            }
+        } catch (error) {
+            this.logger.error(
+                `Failed to dispatch leave status notification for ${leaveId} status=${newStatusId}: ${error?.message ?? error}`,
+                error?.stack,
+            );
+        }
     }
     async create(data: Partial<CreateLeaveDto>, currentUser: UserEntity | null = null) {
         try {
@@ -30,6 +133,9 @@ export class LeaveService {
             if (leaveData.approvedBy)
                 leaveData.approvedBy = { id: leaveData.approvedBy };
             const leave = await this.leaveRepository.save(await this.leaveRepository.create(leaveData))
+            if ((leave as any)?.id) {
+                await this.dispatchSubmittedNotification((leave as any).id, currentUser);
+            }
             return leave;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);
@@ -72,6 +178,9 @@ export class LeaveService {
                     before: { status: prevStatusId },
                     after: { status: nextStatusId },
                 });
+                if (nextStatusId === 'APPROVED' || nextStatusId === 'REJECTED') {
+                    await this.dispatchStatusNotification(id, nextStatusId, currentUser);
+                }
             }
             return leave;
         } catch (error) {
