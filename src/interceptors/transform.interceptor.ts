@@ -11,7 +11,7 @@ export class TransfromInterceptor implements NestInterceptor {
                 meta: {
                     ...{
                         status: 'success',
-                        timestamp: toISTISOString(new Date()),
+                        timestamp: new Date().toISOString(),
                     },
                     ...(data.message ? data : {})
                 },
@@ -20,10 +20,4 @@ export class TransfromInterceptor implements NestInterceptor {
         })))
     }
 
-}
-export const toISTISOString = (date: Date): string => {
-    const offset = 5.5 * 60; // IST offset in minutes
-    const local = new Date(date.getTime() + offset * 60000);
-    const iso = local.toISOString().replace("Z", "+05:30");
-    return iso;
 }
