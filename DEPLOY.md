@@ -25,11 +25,15 @@ The remaining env vars are auto-generated or wired from the database.
 ## What runs at deploy
 
 - `buildCommand`: `npm install --legacy-peer-deps && npm run build`
-- `preDeployCommand`: `npm run typeorm:migrate && npm run typeorm:seed:lookups`
-  - Runs all pending TypeORM migrations against the managed DB.
+- `startCommand`: `npm run typeorm:migrate && npm run typeorm:seed:lookups && npm run start:prod`
+  - Migrations and lookup seeds are folded into the start command because
+    Render's free tier does not allow a separate pre-deploy step.
+  - Runs all pending TypeORM migrations against the managed DB on every
+    boot. Migrations are idempotent so this is safe.
   - Seeds lookup tables only (roles, statuses, leave types). Does **not**
     seed `support@pdsltech.com`; the bootstrap admin handles the first user.
-- `startCommand`: `npm run start:prod`
+  - On a paid plan, move the migrate + seed steps into `preDeployCommand`
+    so they run once per deploy instead of on every dyno start.
 - On boot the `BootstrapAdminService` runs once: if `BOOTSTRAP_ADMIN_EMAIL` is
   set and there is no `ADMIN`/`SUPER_ADMIN` row, it creates one.
 
