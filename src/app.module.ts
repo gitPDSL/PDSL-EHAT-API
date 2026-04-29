@@ -22,8 +22,6 @@ import { TimesheetStatusesModule } from './modules/timesheetStatuses/timesheet-s
 import { ProjectUsersModule } from './modules/projectUsers/project-users.module';
 import { ProjectStatusesModule } from './modules/projectStatus/project-statuses.module';
 import { SendMailModule } from './modules/mail/mail.module';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { LeavesModule } from './modules/leave/leaves.module';
 import { LeaveBalancesModule } from './modules/leaveBalance/leave-balances.module';
 import { LeaveTypesModule } from './modules/leaveType/leave-types.module';
@@ -38,9 +36,6 @@ import { BootstrapModule } from './bootstrap/bootstrap.module';
 
 @Module({
   imports: [
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'frontend'),
-    }),
     ConfigModule.forRoot({
       envFilePath: ['.env', '.dev.env'],
       // ignoreEnvFile: true,
