@@ -1,5 +1,5 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Matches, MinLength } from "class-validator";
+import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MinLength, ValidateIf } from "class-validator";
 import { ACCOUNT_STATUS } from "src/constants/account.constants";
 import { UserEntity } from "src/database/postgres/entities/user.entity";
 
@@ -49,6 +49,24 @@ export class CreateUserDto {
     @IsString()
     @IsOptional()
     updatedBy?: UserEntity;
+
+    @ApiProperty({ required: false, nullable: true, description: 'User id that approves on this user\'s behalf during the delegate window' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null)
+    @IsUUID()
+    delegateManagerId?: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: 'Delegate window start (YYYY-MM-DD)' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null)
+    @IsDateString()
+    delegateFrom?: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: 'Delegate window end (YYYY-MM-DD)' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null)
+    @IsDateString()
+    delegateTo?: string | null;
 }
 
 export class PartialCreateUserDto extends PartialType(
