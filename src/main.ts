@@ -14,12 +14,23 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { MongoExceptionFilter } from './filters/mongo-exception.filter';
 
 async function bootstrap() {
-  // const app = await NestFactory.create(AppModule);
-  // await app.listen(process.env.PORT ?? 3000);
-  const httpsOptions: HttpsOptions = {
-    key: readFileSync(resolve(__dirname, '../cert/key.pem')),
-    cert: readFileSync(resolve(__dirname, '../cert/certificate.pem')),
+  // The HTTPS listener below is currently disabled. In production we
+  // sit behind a TLS-terminating proxy (Render, Nginx, etc.), so the
+  // cert files are not present on disk and reading them would crash
+  // the process before Nest can start. Only attempt the read in dev,
+  // where local certs may exist for HTTPS testing.
+  let httpsOptions: HttpsOptions | null = null;
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      httpsOptions = {
+        key: readFileSync(resolve(__dirname, '../cert/key.pem')),
+        cert: readFileSync(resolve(__dirname, '../cert/certificate.pem')),
+      };
+    } catch {
+      httpsOptions = null;
+    }
   }
+  void httpsOptions;
   const server = express()
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalPipes(new ValidationPipe({
