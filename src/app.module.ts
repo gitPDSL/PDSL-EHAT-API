@@ -34,6 +34,7 @@ import { PayrollModule } from './modules/payroll/payroll.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ExportsModule } from './modules/exports/exports.module';
 import { HolidaysModule } from './modules/holidays/holidays.module';
+import { BootstrapModule } from './bootstrap/bootstrap.module';
 
 @Module({
   imports: [
@@ -76,7 +77,8 @@ import { HolidaysModule } from './modules/holidays/holidays.module';
     PayrollModule,
     NotificationsModule,
     ExportsModule,
-    HolidaysModule
+    HolidaysModule,
+    BootstrapModule,
   ],
   controllers: [],
   providers: [
