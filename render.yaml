@@ -1,0 +1,81 @@
+databases:
+  - name: ehat-db
+    plan: free
+    databaseName: ehat
+    user: ehat
+
+services:
+  - type: web
+    name: ehat-api
+    runtime: node
+    plan: free
+    healthCheckPath: /api/health
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    preDeployCommand: npm run typeorm:migrate && npm run typeorm:seed:lookups
+    startCommand: npm run start:prod
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_PORT
+        value: 10000
+      - key: TZ
+        value: Europe/London
+      - key: APP_NAME
+        value: eHAT
+      - key: NO_REPLY
+        sync: false
+      - key: SUPPORT_EMAIL
+        sync: false
+      - key: APP_URL
+        sync: false
+      - key: APP_AUTH_KEY
+        generateValue: true
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRE_TIME
+        value: 1h
+      - key: JWT_REFRESH_EXPIRE_TIME
+        value: 7d
+      - key: JWT_EXPIRE_TIME
+        value: 1h
+      - key: SMTP_SERVICE
+        value: gmail
+      - key: SMTP_CLIENT_ID
+        sync: false
+      - key: SMTP_CLIENT_SECRET
+        sync: false
+      - key: SMTP_REFRESH_TOKEN
+        sync: false
+      - key: SMTP_EMAIL_USER
+        sync: false
+      - key: BOOTSTRAP_ADMIN_EMAIL
+        sync: false
+      - key: BOOTSTRAP_ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: ehat-db
+          property: host
+      - key: DATABASE_PORT
+        fromDatabase:
+          name: ehat-db
+          property: port
+      - key: DATABASE_USER
+        fromDatabase:
+          name: ehat-db
+          property: user
+      - key: DATABASE_PASSWORD
+        fromDatabase:
+          name: ehat-db
+          property: password
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: ehat-db
+          property: database
+      - key: DATABASE_LOG
+        value: "false"
+      - key: DATABASE_SSL
+        value: "true"

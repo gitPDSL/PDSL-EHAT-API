@@ -2,6 +2,7 @@ import { registerAs } from "@nestjs/config";
 import { DataSource, DataSourceOptions } from "typeorm";
 import * as dotenv from 'dotenv';
 dotenv.config();
+const useSsl = process.env.DATABASE_SSL === 'true';
 const config = {
     type: 'postgres',
     host: process.env.DATABASE_HOST || 'localhost',
@@ -12,6 +13,7 @@ const config = {
     entities: ["src/**/*.entity{.ts,.js}"],
     migrations: ["src/database/postgres/migrations/*{.ts,.js}"],
     synchronize: false,
+    ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
 };
 
 export default registerAs('typeorm', () => config);

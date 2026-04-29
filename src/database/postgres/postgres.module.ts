@@ -28,6 +28,7 @@ export class PostgresModule {
                                 'TYPEORM_ALLOW_SCHEMA_SYNC=true — schema will auto-sync from entities. Dev use only.',
                             );
                         }
+                        const useSsl = configService.get<string>('DATABASE_SSL') === 'true';
                         return {
                             type: 'postgres',
                             host: configService.get('DATABASE_HOST'),
@@ -40,7 +41,8 @@ export class PostgresModule {
                             migrationsRun: nodeEnv === 'production',
                             synchronize: allowSync,
                             retryAttempts: nodeEnv === 'test' ? 0 : 10,
-                            logging: configService.get<any>('DATABASE_LOG') === 'true' ? true : false
+                            logging: configService.get<any>('DATABASE_LOG') === 'true' ? true : false,
+                            ...(useSsl ? { ssl: { rejectUnauthorized: false } } : {}),
                         }
                     },
                     inject: [ConfigService]
