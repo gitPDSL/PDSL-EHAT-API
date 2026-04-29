@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     healthCheckPath: /api/health
-    buildCommand: npm install --legacy-peer-deps && npm run build
+    buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
     startCommand: npm run typeorm:migrate && npm run typeorm:seed:lookups && npm run start:prod
     autoDeploy: true
     envVars:
