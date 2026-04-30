@@ -75,7 +75,7 @@ export class PanelService {
                 .getCount();
             pendingLeaveApprovals = await this.leaveRepo
                 .createQueryBuilder('l')
-                .where(`l.status::text = 'PENDING'`)
+                .where(`l.leave_status_id = 'PENDING'`)
                 .getCount();
             pendingCorrections = await this.correctionRepo
                 .createQueryBuilder('c')
@@ -111,7 +111,7 @@ export class PanelService {
                     .getCount();
                 pendingLeaveApprovals = await this.leaveRepo
                     .createQueryBuilder('l')
-                    .where(`l.status::text = 'PENDING'`)
+                    .where(`l.leave_status_id = 'PENDING'`)
                     .andWhere(`l.user_id IN (:...uids)`, { uids: teamIds })
                     .getCount();
                 pendingCorrections = await this.correctionRepo
