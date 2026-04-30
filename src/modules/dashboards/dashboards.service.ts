@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Not, Repository } from 'typeorm';
 import { ACCOUNT_STATUS, EMPLOYMENT_TYPE, UserEntity } from 'src/database/postgres/entities/user.entity';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { ProjectEntity } from 'src/database/postgres/entities/project.entity';
@@ -27,12 +27,30 @@ interface ProjectBurnDownRow {
 
 @Injectable()
 export class DashboardsService {
+    private readonly logger = new Logger(DashboardsService.name);
+
     constructor(
         @InjectRepository(UserEntity) private readonly userRepo: Repository<UserEntity>,
         @InjectRepository(TimesheetEntity) private readonly tsRepo: Repository<TimesheetEntity>,
         @InjectRepository(ProjectEntity) private readonly projectRepo: Repository<ProjectEntity>,
         @InjectRepository(DailyAllocationEntity) private readonly allocRepo: Repository<DailyAllocationEntity>,
     ) { }
+
+    /**
+     * Users counted on dashboards/utilisation: ACTIVE EMPLOYEEs only.
+     * Admins are deliberately excluded from utilisation (they don't log
+     * billable hours of their own). Contractors are excluded because we
+     * don't track targets for them.
+     */
+    private async chargeableUsers(): Promise<UserEntity[]> {
+        return this.userRepo
+            .createQueryBuilder('u')
+            .leftJoinAndSelect('u.role', 'r')
+            .where('u.status = :st', { st: ACCOUNT_STATUS.ACTIVE })
+            .andWhere(`(u.employment_type IS NULL OR u.employment_type = :et)`, { et: EMPLOYMENT_TYPE.EMPLOYEE })
+            .andWhere(`(r.id IS NULL OR r.id NOT IN (:...admins))`, { admins: ['ADMIN', 'SUPER_ADMIN'] })
+            .getMany();
+    }
 
     async summary(from: string, to: string): Promise<{
         utilisation: UtilisationRow[];
@@ -52,9 +70,7 @@ export class DashboardsService {
     }
 
     private async utilisation(from: string, to: string): Promise<UtilisationRow[]> {
-        const users = await this.userRepo.find({
-            where: { status: ACCOUNT_STATUS.ACTIVE },
-        });
+        const users = await this.chargeableUsers();
         // Pre-compute number of working days in range (Mon-Fri).
         const start = new Date(from);
         const end = new Date(to);
@@ -66,49 +82,58 @@ export class DashboardsService {
 
         const out: UtilisationRow[] = [];
         for (const u of users) {
-            const targetPerDay = Number((u as any).dailyTargetHours ?? 8);
-            const target = workingDays * targetPerDay;
-            const actualRow: any = await this.tsRepo
-                .createQueryBuilder('t')
-                .select('COALESCE(SUM(t.hours), 0)', 'total')
-                .where('t.user_id = :uid', { uid: u.id })
-                .andWhere('t.date BETWEEN :from AND :to', { from, to })
-                .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: 'REJECTED' })
-                .getRawOne();
-            const plannedRow: any = await this.allocRepo
-                .createQueryBuilder('a')
-                .select('COALESCE(SUM(a.planned_hours), 0)', 'total')
-                .where('a.user_id = :uid', { uid: u.id })
-                .andWhere('a.date BETWEEN :from AND :to', { from, to })
-                .getRawOne();
-            const actual = Number(actualRow?.total ?? 0);
-            const planned = Number(plannedRow?.total ?? 0);
-            out.push({
-                userId: u.id,
-                fullName: u.fullName,
-                email: u.email,
-                targetHours: target,
-                actualHours: actual,
-                plannedHours: planned,
-                utilisationPct: target > 0 ? Math.round((actual / target) * 100) : 0,
-            });
+            try {
+                const targetPerDay = Number((u as any).dailyTargetHours ?? 8);
+                const target = workingDays * targetPerDay;
+                const actualRow: any = await this.tsRepo
+                    .createQueryBuilder('t')
+                    .select('COALESCE(SUM(t.hours), 0)', 'total')
+                    .where('t.user_id = :uid', { uid: u.id })
+                    .andWhere('t.date BETWEEN :from AND :to', { from, to })
+                    .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
+                    .getRawOne();
+                const plannedRow: any = await this.allocRepo
+                    .createQueryBuilder('a')
+                    .select('COALESCE(SUM(a.planned_hours), 0)', 'total')
+                    .where('a.user_id = :uid', { uid: u.id })
+                    .andWhere('a.date BETWEEN :from AND :to', { from, to })
+                    .getRawOne();
+                const actual = Number(actualRow?.total ?? 0);
+                const planned = Number(plannedRow?.total ?? 0);
+                out.push({
+                    userId: u.id,
+                    fullName: u.fullName,
+                    email: u.email,
+                    targetHours: target,
+                    actualHours: actual,
+                    plannedHours: planned,
+                    utilisationPct: target > 0 ? Math.round((actual / target) * 100) : 0,
+                });
+            } catch (error: any) {
+                this.logger.warn(`Utilisation row failed for user ${u.id}: ${error?.message ?? error}`);
+            }
         }
         return out.sort((a, b) => b.utilisationPct - a.utilisationPct);
     }
 
     private async billableSplit(from: string, to: string): Promise<{ billableHours: number; nonBillableHours: number }> {
-        const rows: any = await this.tsRepo
-            .createQueryBuilder('t')
-            .leftJoin('t.project', 'p')
-            .select('COALESCE(SUM(CASE WHEN COALESCE(t.billable, p.billable, true) THEN t.hours ELSE 0 END), 0)', 'billable')
-            .addSelect('COALESCE(SUM(CASE WHEN COALESCE(t.billable, p.billable, true) THEN 0 ELSE t.hours END), 0)', 'nonBillable')
-            .where('t.date BETWEEN :from AND :to', { from, to })
-            .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: 'REJECTED' })
-            .getRawOne();
-        return {
-            billableHours: Number(rows?.billable ?? 0),
-            nonBillableHours: Number(rows?.nonBillable ?? 0),
-        };
+        try {
+            const rows: any = await this.tsRepo
+                .createQueryBuilder('t')
+                .leftJoin('projects', 'p', 'p.id = t.project_id')
+                .select('COALESCE(SUM(CASE WHEN COALESCE(t.billable, p.billable, true) THEN t.hours ELSE 0 END), 0)', 'billable')
+                .addSelect('COALESCE(SUM(CASE WHEN COALESCE(t.billable, p.billable, true) THEN 0 ELSE t.hours END), 0)', 'nonBillable')
+                .where('t.date BETWEEN :from AND :to', { from, to })
+                .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
+                .getRawOne();
+            return {
+                billableHours: Number(rows?.billable ?? 0),
+                nonBillableHours: Number(rows?.nonBillable ?? 0),
+            };
+        } catch (error: any) {
+            this.logger.warn(`Billable split failed: ${error?.message ?? error}`);
+            return { billableHours: 0, nonBillableHours: 0 };
+        }
     }
 
     private async projectBurnDown(): Promise<ProjectBurnDownRow[]> {
@@ -121,7 +146,7 @@ export class DashboardsService {
                 .createQueryBuilder('t')
                 .select('COALESCE(SUM(t.hours), 0)', 'total')
                 .where('t.project_id = :pid', { pid: p.id })
-                .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: 'REJECTED' })
+                .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
                 .getRawOne();
             const plannedFutureRow: any = await this.allocRepo
                 .createQueryBuilder('a')

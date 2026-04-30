@@ -32,10 +32,11 @@ export class PanelService {
         const chain = new Set<string>();
         let frontier: string[] = [callerId];
         for (let i = 0; i < REPORTING_HOPS && frontier.length > 0; i++) {
-            const directs = await this.userRepo.find({
-                where: { manager: { id: frontier as any } } as any,
-                select: ['id'],
-            } as any);
+            const directs: any[] = await this.userRepo
+                .createQueryBuilder('u')
+                .select('u.id', 'id')
+                .where('u.manager_id IN (:...mids)', { mids: frontier })
+                .getRawMany();
             const next: string[] = [];
             for (const d of directs) {
                 if (!chain.has(d.id)) {
@@ -70,11 +71,11 @@ export class PanelService {
         if (isAdmin) {
             pendingHourApprovals = await this.tsRepo
                 .createQueryBuilder('t')
-                .where(`t.status = 'SUBMITTED'`)
+                .where(`t.status::text = 'SUBMITTED'`)
                 .getCount();
             pendingLeaveApprovals = await this.leaveRepo
                 .createQueryBuilder('l')
-                .where(`l.status = 'PENDING'`)
+                .where(`l.status::text = 'PENDING'`)
                 .getCount();
             pendingCorrections = await this.correctionRepo
                 .createQueryBuilder('c')
@@ -84,7 +85,7 @@ export class PanelService {
                 .createQueryBuilder('t')
                 .select('COALESCE(SUM(t.hours), 0)', 'total')
                 .where('t.date BETWEEN :from AND :to', { from: weekStart, to: weekEnd })
-                .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: 'REJECTED' })
+                .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
                 .getRawOne();
             thisWeekHours = Number(wkRow?.total ?? 0);
 
@@ -104,13 +105,13 @@ export class PanelService {
             if (teamIds.length > 0) {
                 pendingHourApprovals = await this.tsRepo
                     .createQueryBuilder('t')
-                    .leftJoin('t.project', 'p')
-                    .where(`t.status = 'SUBMITTED'`)
+                    .leftJoin('projects', 'p', 'p.id = t.project_id')
+                    .where(`t.status::text = 'SUBMITTED'`)
                     .andWhere(`(t.user_id IN (:...uids) OR p.manager_id = :cid)`, { uids: teamIds, cid: caller.id })
                     .getCount();
                 pendingLeaveApprovals = await this.leaveRepo
                     .createQueryBuilder('l')
-                    .where(`l.status = 'PENDING'`)
+                    .where(`l.status::text = 'PENDING'`)
                     .andWhere(`l.user_id IN (:...uids)`, { uids: teamIds })
                     .getCount();
                 pendingCorrections = await this.correctionRepo
@@ -124,7 +125,7 @@ export class PanelService {
                     .select('COALESCE(SUM(t.hours), 0)', 'total')
                     .where('t.date BETWEEN :from AND :to', { from: weekStart, to: weekEnd })
                     .andWhere(`t.user_id IN (:...uids)`, { uids: teamIds })
-                    .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: 'REJECTED' })
+                    .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
                     .getRawOne();
                 thisWeekHours = Number(wkRow?.total ?? 0);
                 const tgtRow: any = await this.userRepo

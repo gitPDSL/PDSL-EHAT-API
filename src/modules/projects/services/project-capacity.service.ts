@@ -41,7 +41,7 @@ export class ProjectCapacityService {
             .createQueryBuilder('t')
             .select('COALESCE(SUM(t.hours), 0)', 'total')
             .where('t.project_id = :projectId', { projectId })
-            .andWhere('(t.status IS NULL OR t.status != :rejected)', { rejected: REJECTED });
+            .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: REJECTED });
         if (ignoreTimesheetId) {
             qb.andWhere('t.id != :ignoreId', { ignoreId: ignoreTimesheetId });
         }
