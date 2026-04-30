@@ -31,22 +31,29 @@ export class LeavesController {
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
         const date = query.date;
+        // LeaveEntity has startDate + endDate columns, not a single date
+        // column. Translate the inbound `date` query (single day, range,
+        // or comparison) into an overlap filter so leaves that touch the
+        // requested window match.
+        delete query.date;
         query = QueryTransformTypeorm(query);
         if (date) {
-            if (date.includes('>='))
-                query.date = MoreThanOrEqual(new Date(date.replace('>=', '')));
-            else if (date.includes('>'))
-                query.date = MoreThan(new Date(date.replace('>', '')));
-            else if (date.includes('<='))
-                query.date = LessThanOrEqual(new Date(date.replace('<=', '')));
-            else if (date.includes('<'))
-                query.date = LessThan(new Date(date.replace('<', '')));
-            else {
-                let dates = date.split(',').filter(a => a);
-                if (dates.length === 2)
-                    query.date = Between(new Date(dates[0]), new Date(dates[1]))
-                else
-                    query.date = Between(new Date(moment(dates[0]).startOf('day').toISOString()), new Date(moment(dates[0]).endOf('day').toISOString()))
+            if (date.includes('>=')) {
+                query.endDate = MoreThanOrEqual(new Date(date.replace('>=', '')));
+            } else if (date.includes('>')) {
+                query.endDate = MoreThan(new Date(date.replace('>', '')));
+            } else if (date.includes('<=')) {
+                query.startDate = LessThanOrEqual(new Date(date.replace('<=', '')));
+            } else if (date.includes('<')) {
+                query.startDate = LessThan(new Date(date.replace('<', '')));
+            } else {
+                const dates = date.split(',').filter((a: any) => a);
+                const from = dates[0] ? moment(dates[0]).startOf('day').toDate() : null;
+                const to = dates[1] ? moment(dates[1]).endOf('day').toDate()
+                    : (dates[0] ? moment(dates[0]).endOf('day').toDate() : null);
+                // A leave overlaps [from, to] iff startDate <= to AND endDate >= from.
+                if (to) query.startDate = LessThanOrEqual(to);
+                if (from) query.endDate = MoreThanOrEqual(from);
             }
         }
         if (query.relations)
