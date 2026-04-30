@@ -16,8 +16,7 @@ export class CorrectionsController {
         @Param('id', ParseUUIDPipe) timesheetId: string,
         @Body() body: { reason: string },
     ): Promise<any> {
-        const data = await this.correctionsService.createForOwner(timesheetId, body?.reason ?? '', req['user']);
-        return { data };
+        return this.correctionsService.createForOwner(timesheetId, body?.reason ?? '', req['user']);
     }
 
     @ApiOperation({ summary: 'List correction requests. status filter optional. mine=true returns only requests filed by the caller.' })
@@ -32,11 +31,10 @@ export class CorrectionsController {
         if (filterStatus && !Object.values(CORRECTION_STATUS).includes(filterStatus)) {
             throw new BadRequestException('Invalid status filter');
         }
-        const data = await this.correctionsService.list(
+        return this.correctionsService.list(
             { status: filterStatus, mine: mine === 'true' },
             req['user'],
         );
-        return { data };
     }
 
     @ApiOperation({ summary: 'Approve or deny a correction request. Senior manager (in reporting chain) or admin.' })
@@ -50,7 +48,6 @@ export class CorrectionsController {
         if (body?.decision !== 'APPROVED' && body?.decision !== 'DENIED') {
             throw new BadRequestException('decision must be APPROVED or DENIED');
         }
-        const data = await this.correctionsService.review(id, body.decision, body.decisionNote ?? null, req['user']);
-        return { data };
+        return this.correctionsService.review(id, body.decision, body.decisionNote ?? null, req['user']);
     }
 }

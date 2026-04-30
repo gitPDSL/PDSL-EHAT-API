@@ -17,13 +17,12 @@ export class AllocationsController {
         @Query('userIds') userIds?: string,
     ): Promise<any> {
         if (!from || !to) throw new BadRequestException('from and to are required (YYYY-MM-DD)');
-        const data = await this.allocationsService.grid({
+        return this.allocationsService.grid({
             from,
             to,
             projectIds: projectIds ? projectIds.split(',').filter(Boolean) : undefined,
             userIds: userIds ? userIds.split(',').filter(Boolean) : undefined,
         });
-        return { data };
     }
 
     @ApiOperation({ summary: 'Bulk upsert daily allocations. Past-week edits require SENIOR_MANAGER or admin.' })
@@ -34,8 +33,7 @@ export class AllocationsController {
         @Body() body: { items: UpsertAllocation[] },
     ): Promise<any> {
         if (!body?.items || !Array.isArray(body.items)) throw new BadRequestException('items array required');
-        const result = await this.allocationsService.bulkUpsert(body.items, req['user']);
-        return { data: result };
+        return this.allocationsService.bulkUpsert(body.items, req['user']);
     }
 
     @ApiOperation({ summary: 'Copy a user\'s allocations from one week forward by 7 days.' })
@@ -47,6 +45,6 @@ export class AllocationsController {
     ): Promise<any> {
         if (!body?.userId || !body?.sourceWeekStart) throw new BadRequestException('userId and sourceWeekStart required');
         const upserted = await this.allocationsService.copyWeekForward(body.userId, body.sourceWeekStart, req['user']);
-        return { data: { upserted } };
+        return { upserted };
     }
 }

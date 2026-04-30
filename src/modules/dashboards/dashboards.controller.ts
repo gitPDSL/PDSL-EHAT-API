@@ -13,7 +13,6 @@ export class DashboardsController {
     @Get('summary')
     async summary(@Query('from') from: string, @Query('to') to: string): Promise<any> {
         if (!from || !to) throw new BadRequestException('from and to are required (YYYY-MM-DD)');
-        const data = await this.dashboardsService.summary(from, to);
-        return { data };
+        return this.dashboardsService.summary(from, to);
     }
 }

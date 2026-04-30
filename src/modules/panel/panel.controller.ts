@@ -13,7 +13,6 @@ export class PanelController {
     @Roles('SUPER_ADMIN', 'ADMIN', 'SENIOR_MANAGER', 'MANAGER')
     @Get('summary')
     async summary(@Req() req: Request): Promise<any> {
-        const data = await this.panelService.summary(req['user']);
-        return { data };
+        return this.panelService.summary(req['user']);
     }
 }

@@ -26,9 +26,8 @@ export class ProjectsController {
             .split(',')
             .map((s) => s.trim())
             .filter(Boolean);
-        if (idList.length === 0) return { data: [] };
-        const data = await this.projectCapacityService.snapshotMany(idList);
-        return { data };
+        if (idList.length === 0) return [];
+        return this.projectCapacityService.snapshotMany(idList);
     }
     @ApiOperation({ summary: 'Create a new project (admin only)' })
     @ApiBearerAuth()
