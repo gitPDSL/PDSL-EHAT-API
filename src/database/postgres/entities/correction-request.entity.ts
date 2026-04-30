@@ -61,6 +61,10 @@ export class CorrectionRequestEntity {
     @Column({ type: 'text', name: 'decision_note', nullable: true })
     decisionNote: string | null;
 
+    @ApiProperty({ required: false, nullable: true, description: 'Timestamp of the last stale-correction nudge sent to the line manager.' })
+    @Column({ type: 'timestamp', name: 'nudged_at', nullable: true })
+    nudgedAt: Date | null;
+
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', type: 'timestamp', default: () => 'now()' })
     createdAt: Date;

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import * as moment from 'moment';
 import { DailyAllocationEntity } from 'src/database/postgres/entities/daily-allocation.entity';
+import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 
 const ADMIN_ROLES = new Set(['ADMIN', 'SUPER_ADMIN']);
@@ -20,7 +21,63 @@ export class AllocationsService {
 
     constructor(
         @InjectRepository(DailyAllocationEntity) private readonly repo: Repository<DailyAllocationEntity>,
+        @InjectRepository(TimesheetEntity) private readonly tsRepo: Repository<TimesheetEntity>,
     ) { }
+
+    /**
+     * Build planning suggestions from the last 4 weeks of approved hours.
+     * For each (user, project, weekday) we compute the average hours and
+     * project that across the requested date range. No write side-effects;
+     * the manager applies suggestions through the existing bulkUpsert path
+     * which still enforces project caps.
+     */
+    async suggest(filters: {
+        from: string;
+        to: string;
+        userIds?: string[];
+        projectIds?: string[];
+    }): Promise<Array<{ userId: string; projectId: string; date: string; plannedHours: number; }>> {
+        const lookbackEnd = moment().format('YYYY-MM-DD');
+        const lookbackStart = moment().subtract(4, 'weeks').format('YYYY-MM-DD');
+        const qb = this.tsRepo
+            .createQueryBuilder('t')
+            .select('t.user_id', 'userId')
+            .addSelect('t.project_id', 'projectId')
+            .addSelect('EXTRACT(ISODOW FROM t.date)::int', 'dow')
+            .addSelect('AVG(t.hours)', 'avgHours')
+            .where('t.date BETWEEN :ls AND :le', { ls: lookbackStart, le: lookbackEnd })
+            .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' });
+        if (filters.userIds && filters.userIds.length) qb.andWhere('t.user_id IN (:...uids)', { uids: filters.userIds });
+        if (filters.projectIds && filters.projectIds.length) qb.andWhere('t.project_id IN (:...pids)', { pids: filters.projectIds });
+        qb.groupBy('t.user_id').addGroupBy('t.project_id').addGroupBy('EXTRACT(ISODOW FROM t.date)');
+        const rows: any[] = await qb.getRawMany();
+
+        const map = new Map<string, number>();
+        for (const r of rows) {
+            const avg = Number(r.avgHours ?? 0);
+            if (avg < 0.5) continue;
+            const rounded = Math.round(avg * 2) / 2;
+            map.set(`${r.userId}|${r.projectId}|${r.dow}`, rounded);
+        }
+
+        const out: Array<{ userId: string; projectId: string; date: string; plannedHours: number; }> = [];
+        const start = moment(filters.from);
+        const end = moment(filters.to);
+        for (const [key, hours] of map.entries()) {
+            const [userId, projectId, dowStr] = key.split('|');
+            const targetDow = Number(dowStr);
+            for (let d = start.clone(); d.isSameOrBefore(end); d.add(1, 'day')) {
+                if (d.isoWeekday() !== targetDow) continue;
+                out.push({
+                    userId,
+                    projectId,
+                    date: d.format('YYYY-MM-DD'),
+                    plannedHours: hours,
+                });
+            }
+        }
+        return out;
+    }
 
     async grid(filters: {
         from: string;

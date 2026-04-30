@@ -242,6 +242,87 @@ export class TimesheetService {
             throw error;
         }
     }
+    /**
+     * Snapshot a user's prior-week entries as a "template" for the
+     * "Fill from last week" UI. Returns just the raw values; does not
+     * write anything.
+     */
+    async lastWeekTemplate(userId: string, currentWeekNumber: number, currentYear: number): Promise<Array<{ projectId: string; dayOffset: number; hours: number; note: string | null; }>> {
+        // Compute prior ISO week start. Using moment.isoWeek arithmetic so
+        // year boundaries are handled correctly.
+        const startOfCurrent = moment().isoWeekYear(currentYear).isoWeek(currentWeekNumber).startOf('isoWeek');
+        const startOfPrev = startOfCurrent.clone().subtract(1, 'week');
+        const endOfPrev = startOfPrev.clone().endOf('isoWeek');
+        const rows: any[] = await this.timesheetRepository
+            .createQueryBuilder('t')
+            .where('t.user_id = :uid', { uid: userId })
+            .andWhere('t.date BETWEEN :from AND :to', {
+                from: startOfPrev.format('YYYY-MM-DD'),
+                to: endOfPrev.format('YYYY-MM-DD'),
+            })
+            .andWhere(`(t.status IS NULL OR t.status::text != :rejected)`, { rejected: 'REJECTED' })
+            .getMany();
+        return rows.map((r) => ({
+            projectId: r.projectId,
+            dayOffset: moment(r.date).diff(startOfPrev, 'days'),
+            hours: Number(r.hours ?? 0),
+            note: r.note ?? null,
+        }));
+    }
+
+    /**
+     * Bulk-create timesheets from a template for the requested week. Each
+     * row goes through the existing validation pipeline (capacity, daily
+     * cap, payroll lock) so caps still apply. Returns counts of created
+     * vs skipped.
+     */
+    async fillFromTemplate(
+        userId: string,
+        targetWeekNumber: number,
+        targetYear: number,
+        items: Array<{ projectId: string; dayOffset: number; hours: number; note?: string | null; }>,
+        currentUser: UserEntity | null = null,
+    ): Promise<{ created: number; skipped: number; errors: string[] }> {
+        if (!Array.isArray(items) || items.length === 0) {
+            return { created: 0, skipped: 0, errors: [] };
+        }
+        const startOfTarget = moment().isoWeekYear(targetYear).isoWeek(targetWeekNumber).startOf('isoWeek');
+        let created = 0;
+        let skipped = 0;
+        const errors: string[] = [];
+        for (const it of items) {
+            try {
+                if (it.dayOffset < 0 || it.dayOffset > 6) continue;
+                if (!Number.isFinite(it.hours) || it.hours <= 0) continue;
+                const targetDate = startOfTarget.clone().add(it.dayOffset, 'days');
+                await this.create({
+                    userId,
+                    projectId: it.projectId,
+                    weekNumber: targetWeekNumber,
+                    year: targetYear,
+                    date: targetDate.toDate(),
+                    hours: it.hours,
+                    note: it.note ?? undefined,
+                } as any, currentUser);
+                created++;
+            } catch (error: any) {
+                skipped++;
+                errors.push(error?.message ?? String(error));
+            }
+        }
+        try {
+            await this.auditService.log({
+                actorId: currentUser?.id ?? null,
+                action: 'timesheet.bulk-fill',
+                entityType: 'Timesheet',
+                entityId: userId,
+                before: null,
+                after: { source: 'last-week-template', created, skipped, week: targetWeekNumber, year: targetYear },
+            });
+        } catch { }
+        return { created, skipped, errors };
+    }
+
     async bulkUpdate(
         query: Record<string, any> = {},
         data: Partial<UpdateTimesheetDto>,

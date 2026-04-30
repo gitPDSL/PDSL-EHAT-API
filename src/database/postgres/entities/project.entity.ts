@@ -29,6 +29,9 @@ export class ProjectEntity {
     @ApiProperty({ description: 'Timestamp of the last threshold alert dispatch; cleared when remaining rises back above the threshold.', required: false, nullable: true })
     @Column({ type: 'timestamp', name: 'alerted_at', nullable: true })
     alertedAt: Date | null;
+    @ApiProperty({ description: 'Timestamp of the last idle-project alert dispatch.', required: false, nullable: true })
+    @Column({ type: 'timestamp', name: 'idle_alerted_at', nullable: true })
+    idleAlertedAt: Date | null;
     @ApiProperty()
     @Index('idx_projects_client_id')
     @ManyToOne(() => ClientEntity, { nullable: true })

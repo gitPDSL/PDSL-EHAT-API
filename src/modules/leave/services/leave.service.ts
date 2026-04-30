@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { UpdateLeaveDto } from '../dto/leave.dto';
 import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateLeaveDto } from '../dto/leave.dto';
+import { DailyAllocationEntity } from 'src/database/postgres/entities/daily-allocation.entity';
 import { AuditService } from 'src/modules/audit/audit.service';
 import { MailService } from 'src/mail/mail.service';
 import { NotificationsService } from 'src/modules/notifications/notifications.service';
@@ -14,10 +15,30 @@ export class LeaveService {
     private readonly logger = new Logger(LeaveService.name);
     constructor(
         @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
+        @InjectRepository(DailyAllocationEntity) private readonly allocationRepository: Repository<DailyAllocationEntity>,
         private readonly auditService: AuditService,
         private readonly mailService: MailService,
         private readonly notificationsService: NotificationsService,
     ) {
+    }
+
+    /**
+     * When a leave request transitions to APPROVED, blow away any planned
+     * allocations on the leave dates so the planning grid + utilisation
+     * dashboard reflect the user as on leave (not 0% available).
+     */
+    private async clearPlannedHoursForLeave(leave: any): Promise<void> {
+        if (!leave?.userId || !leave?.startDate || !leave?.endDate) return;
+        const start = String(leave.startDate).slice(0, 10);
+        const end = String(leave.endDate).slice(0, 10);
+        try {
+            await this.allocationRepository.delete({
+                userId: leave.userId,
+                date: Between(start, end) as any,
+            });
+        } catch (error: any) {
+            this.logger.warn(`Failed to clear planned hours for leave ${leave.id}: ${error?.message ?? error}`);
+        }
     }
 
     private formatDate(d: Date | string): string {
@@ -180,6 +201,12 @@ export class LeaveService {
                 });
                 if (nextStatusId === 'APPROVED' || nextStatusId === 'REJECTED') {
                     await this.dispatchStatusNotification(id, nextStatusId, currentUser);
+                }
+                if (nextStatusId === 'APPROVED') {
+                    // Wipe future planned allocations across the leave window
+                    // so the planning grid stays honest. We deliberately do
+                    // not auto-restore on un-approval; managers must re-plan.
+                    await this.clearPlannedHoursForLeave(leave);
                 }
             }
             return leave;

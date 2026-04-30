@@ -24,6 +24,38 @@ export class TimesheetsController {
     create(@Req() req: Request, @Body() createTimesheetDto: CreateTimesheetDto, @Ip() ip: string): Promise<any> {
         return this.timesheetService.create(createTimesheetDto, req['user']);
     }
+
+    @ApiOperation({ summary: 'Get a template of the caller\'s prior-week timesheet entries for "Fill from last week".' })
+    @ApiBearerAuth()
+    @Get('last-week-template')
+    async lastWeekTemplate(
+        @Req() req: Request,
+        @Query('weekNumber') weekNumber: string,
+        @Query('year') year: string,
+    ): Promise<any> {
+        const wk = Number(weekNumber);
+        const yr = Number(year);
+        if (!Number.isFinite(wk) || !Number.isFinite(yr)) {
+            return [];
+        }
+        return this.timesheetService.lastWeekTemplate(req['user'].id, wk, yr);
+    }
+
+    @ApiOperation({ summary: 'Bulk-create timesheets from a template for the caller. Existing entries are not touched; capacity rules still apply.' })
+    @ApiBearerAuth()
+    @Post('fill-from-template')
+    async fillFromTemplate(
+        @Req() req: Request,
+        @Body() body: { weekNumber: number; year: number; items: Array<{ projectId: string; dayOffset: number; hours: number; note?: string | null; }> },
+    ): Promise<any> {
+        return this.timesheetService.fillFromTemplate(
+            req['user'].id,
+            Number(body?.weekNumber),
+            Number(body?.year),
+            body?.items ?? [],
+            req['user'],
+        );
+    }
     @ApiOperation({ summary: 'Get timesheets' })
     @ApiBearerAuth()
     @ApiResponseWrapper(TimesheetEntity, true)

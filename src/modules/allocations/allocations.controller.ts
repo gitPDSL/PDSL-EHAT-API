@@ -36,6 +36,16 @@ export class AllocationsController {
         return this.allocationsService.bulkUpsert(body.items, req['user']);
     }
 
+    @ApiOperation({ summary: 'Suggest planning cells based on the last 4 weeks of approved hours. Returns suggestions; does not write.' })
+    @ApiBearerAuth()
+    @Post('suggest')
+    async suggest(
+        @Body() body: { from: string; to: string; userIds?: string[]; projectIds?: string[] },
+    ): Promise<any> {
+        if (!body?.from || !body?.to) throw new BadRequestException('from and to are required (YYYY-MM-DD)');
+        return this.allocationsService.suggest(body);
+    }
+
     @ApiOperation({ summary: 'Copy a user\'s allocations from one week forward by 7 days.' })
     @ApiBearerAuth()
     @Post('copy-week')
