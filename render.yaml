@@ -54,6 +54,8 @@ services:
         sync: false
       - key: BOOTSTRAP_ADMIN_PASSWORD
         sync: false
+      - key: EMPLOYEE_DOMAINS
+        value: pdsl.com
       - key: DATABASE_HOST
         fromDatabase:
           name: ehat-db

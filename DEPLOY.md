@@ -19,6 +19,12 @@ This repo ships a `render.yaml` blueprint that provisions:
      — Gmail OAuth2 credentials. See the project README for the OAuth Playground walk-through.
    - `BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD` — login created automatically
      on first boot if no admin exists. Rotate after first sign-in.
+   - `EMPLOYEE_DOMAINS` — comma-separated list of email domains whose users count
+     as EMPLOYEE rather than CONTRACTOR. Defaults to `pdsl.com`. Case-insensitive,
+     exact suffix match, no wildcards. Affects new user creation (auto-detect)
+     and the EmploymentTypeBackfill migration if it has not run yet. Existing
+     users are not reclassified when this value changes; admins must override
+     individual users on the People page.
 
 The remaining env vars are auto-generated or wired from the database.
 
