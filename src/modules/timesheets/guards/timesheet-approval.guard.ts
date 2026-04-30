@@ -108,7 +108,16 @@ export class TimesheetApprovalGuard implements CanActivate {
         }
 
         const ownerId = timesheet.userId;
+        const currentStatusId: string | null = timesheet.status?.id ?? null;
         if (user.id === ownerId) {
+            // Once a row leaves PENDING, the owner can no longer edit it.
+            // The path forward is to file a correction request, which a
+            // senior manager / admin can grant to revert the row to PENDING.
+            if (currentStatusId && currentStatusId !== 'PENDING') {
+                throw new ForbiddenException(
+                    `Timesheet is ${currentStatusId.toLowerCase()} and cannot be edited. File a correction request instead.`,
+                );
+            }
             return true;
         }
         throw new ForbiddenException(

@@ -23,6 +23,12 @@ export class ProjectEntity {
     @ApiProperty({ description: 'Whether hours on this project are billable by default. Can be overridden per timesheet entry.' })
     @Column({ type: 'boolean', default: true })
     billable: boolean;
+    @ApiProperty({ description: 'Send a one-shot alert when remaining hours fall below this number.' })
+    @Column({ type: 'int', name: 'alert_threshold_hours', default: 50 })
+    alertThresholdHours: number;
+    @ApiProperty({ description: 'Timestamp of the last threshold alert dispatch; cleared when remaining rises back above the threshold.', required: false, nullable: true })
+    @Column({ type: 'timestamp', name: 'alerted_at', nullable: true })
+    alertedAt: Date | null;
     @ApiProperty()
     @Index('idx_projects_client_id')
     @ManyToOne(() => ClientEntity, { nullable: true })

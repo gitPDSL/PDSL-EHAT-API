@@ -76,6 +76,14 @@ export class UserEntity {
     @Column({ type: 'varchar', length: 16, name: 'employment_type', nullable: true })
     employmentType: EMPLOYMENT_TYPE | null;
 
+    @ApiProperty({ description: 'Daily target hours used for utilisation widgets. No upper limit is enforced.' })
+    @Column({ type: 'numeric', precision: 4, scale: 2, name: 'daily_target_hours', default: 8 })
+    dailyTargetHours: string;
+
+    @ApiProperty({ description: 'Weekly target hours used for utilisation widgets. No upper limit is enforced.' })
+    @Column({ type: 'numeric', precision: 5, scale: 2, name: 'weekly_target_hours', default: 40 })
+    weeklyTargetHours: string;
+
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;

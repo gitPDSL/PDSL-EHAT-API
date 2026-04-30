@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Ip, Logger, Param, ParseUUIDPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { ProjectService } from './services/project.service';
+import { ProjectCapacityService } from './services/project-capacity.service';
 import { Request } from 'express';
 import { CreateProjectDto, PartialCreateProjectDto, UpdateProjectDto } from './dto/project.dto';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
@@ -13,8 +14,22 @@ export class ProjectsController {
     private readonly logger = new Logger(ProjectsController.name);
     constructor(
         private projectService: ProjectService,
-        private projectUserService: ProjectUserService
+        private projectUserService: ProjectUserService,
+        private projectCapacityService: ProjectCapacityService,
     ) { }
+
+    @ApiOperation({ summary: 'Capacity snapshot for one or many projects. Pass ?ids=uuid1,uuid2 to bulk-fetch.' })
+    @ApiBearerAuth()
+    @Get('capacity/snapshot')
+    async capacity(@Query('ids') ids?: string): Promise<any> {
+        const idList = (ids ?? '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+        if (idList.length === 0) return { data: [] };
+        const data = await this.projectCapacityService.snapshotMany(idList);
+        return { data };
+    }
     @ApiOperation({ summary: 'Create a new project (admin only)' })
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectDto })

@@ -34,6 +34,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ExportsModule } from './modules/exports/exports.module';
 import { HolidaysModule } from './modules/holidays/holidays.module';
 import { BootstrapModule } from './bootstrap/bootstrap.module';
+import { CorrectionsModule } from './modules/corrections/corrections.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { BootstrapModule } from './bootstrap/bootstrap.module';
     ExportsModule,
     HolidaysModule,
     BootstrapModule,
+    CorrectionsModule,
   ],
   controllers: [],
   providers: [

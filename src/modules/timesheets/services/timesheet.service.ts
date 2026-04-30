@@ -8,6 +8,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateTimesheetDto } from '../dto/timesheet.dto';
 import { AuditService } from 'src/modules/audit/audit.service';
 import { PayrollService } from 'src/modules/payroll/services/payroll.service';
+import { ProjectCapacityService } from 'src/modules/projects/services/project-capacity.service';
 import { MailService } from 'src/mail/mail.service';
 import { NotificationsService } from 'src/modules/notifications/notifications.service';
 
@@ -19,6 +20,7 @@ export class TimesheetService {
         @InjectDataSource() private readonly dataSource: DataSource,
         private readonly auditService: AuditService,
         private readonly payrollService: PayrollService,
+        private readonly projectCapacityService: ProjectCapacityService,
         private readonly mailService: MailService,
         private readonly notificationsService: NotificationsService,
     ) {
@@ -165,7 +167,12 @@ export class TimesheetService {
             if (timesheetData.date) {
                 await this.assertNotInLockedPeriod(timesheetData.date, currentUser);
             }
-            // console.log(timesheetData)
+            if (timesheetData.projectId && timesheetData.hours !== undefined) {
+                await this.projectCapacityService.assertCapacity(
+                    timesheetData.projectId,
+                    Number(timesheetData.hours),
+                );
+            }
             const timesheet = await this.timesheetRepository.save(await this.timesheetRepository.create(timesheetData))
             return timesheet;
         } catch (error) {
@@ -202,6 +209,13 @@ export class TimesheetService {
             }
             if (timesheet.date) {
                 await this.assertNotInLockedPeriod(timesheet.date, currentUser, id);
+            }
+            if (timesheetData.hours !== undefined && timesheet.projectId) {
+                await this.projectCapacityService.assertCapacity(
+                    timesheet.projectId,
+                    Number(timesheetData.hours),
+                    id,
+                );
             }
             Object.keys(timesheetData).map(key => {
                 timesheet[key] = timesheetData[key];

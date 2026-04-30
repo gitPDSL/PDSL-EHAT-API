@@ -72,6 +72,14 @@ export class CreateUserDto {
     @IsOptional()
     @IsEnum(EMPLOYMENT_TYPE)
     employmentType?: EMPLOYMENT_TYPE;
+
+    @ApiProperty({ required: false, description: 'Daily target hours for utilisation widgets.' })
+    @IsOptional()
+    dailyTargetHours?: number | string;
+
+    @ApiProperty({ required: false, description: 'Weekly target hours for utilisation widgets.' })
+    @IsOptional()
+    weeklyTargetHours?: number | string;
 }
 
 export class PartialCreateUserDto extends PartialType(

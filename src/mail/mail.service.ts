@@ -63,6 +63,30 @@ export class MailService implements OnModuleInit {
             html: htmlContent,
         });
     }
+
+    /**
+     * Generic transactional email using the shared "general" template.
+     * Suitable for one-off operational alerts (e.g. project cap thresholds)
+     * that don't deserve their own template.
+     */
+    async sendGeneric(
+        to: string,
+        subject: string,
+        message: string,
+        extras: { recipientName?: string; link?: string } = {},
+    ) {
+        await this.sendWithRetry({
+            to,
+            subject,
+            template: 'general',
+            context: {
+                appName: this.configService.get('APP_NAME'),
+                name: extras.recipientName ?? 'there',
+                message,
+                link: extras.link ?? '',
+            },
+        });
+    }
     async sendAccountVerification(to: string, name: string, link: string, webUrl: string) {
         return this.mailerService.sendMail({
             to,
