@@ -80,6 +80,18 @@ export class CreateUserDto {
     @ApiProperty({ required: false, description: 'Weekly target hours for utilisation widgets.' })
     @IsOptional()
     weeklyTargetHours?: number | string;
+
+    @ApiProperty({ required: false, nullable: true, description: 'Hire date YYYY-MM-DD. Drives first-month leave proration.' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null)
+    @IsDateString()
+    hireDate?: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: 'FULL_TIME or PART_TIME. Part-time scales accrual.' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null)
+    @IsString()
+    contractType?: string | null;
 }
 
 export class PartialCreateUserDto extends PartialType(
