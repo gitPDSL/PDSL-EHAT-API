@@ -7,6 +7,7 @@ import { UserEntity } from 'src/database/postgres/entities/user.entity';
 import { CreateLeaveBalanceDto } from '../dto/leave-balance.dto';
 import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
 import { LeaveTypeEntity } from 'src/database/postgres/entities/leave-type.entity';
+import { AuditService } from 'src/modules/audit/audit.service';
 import * as moment from 'moment';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class LeaveBalanceService {
         @InjectRepository(LeaveBalanceEntity) private readonly leaveBalanceRepository: Repository<LeaveBalanceEntity>,
         @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
         @InjectRepository(LeaveTypeEntity) private readonly leaveTypeRepository: Repository<LeaveTypeEntity>,
+        private readonly auditService: AuditService,
     ) {
     }
 
@@ -63,18 +65,43 @@ export class LeaveBalanceService {
     }
     async update(user: string, leaveType: string, year: number, data: Partial<UpdateLeaveBalanceDto>, currentUser: UserEntity | null = null) {
         const leaveBalanceData: any = data;
+        const reason: string | undefined = (data as any)?.adjustmentReason;
+        delete (leaveBalanceData as any).adjustmentReason;
         if (currentUser && currentUser.id) {
             leaveBalanceData['updatedBy'] = currentUser;
         }
         if (leaveBalanceData.status)
             leaveBalanceData.status = { id: leaveBalanceData.status };
         try {
-            let leaveBalance = await this.leaveBalanceRepository.findOne({ where: { userId: user, leaveTypeId: leaveType, year } }) || {};
+            let leaveBalance: any = await this.leaveBalanceRepository.findOne({ where: { userId: user, leaveTypeId: leaveType, year } }) || {};
+            const before = {
+                totalLeaves: leaveBalance.totalLeaves,
+                leavesUsed: leaveBalance.leavesUsed,
+                accruedThisYear: leaveBalance.accruedThisYear,
+                carryForward: leaveBalance.carryForward,
+            };
             Object.keys(leaveBalanceData).map(key => {
                 leaveBalance[key] = leaveBalanceData[key];
             })
             await this.leaveBalanceRepository.save(leaveBalance);
-            // console.log('update leaveBalance', leaveBalance)
+            const after = {
+                totalLeaves: leaveBalance.totalLeaves,
+                leavesUsed: leaveBalance.leavesUsed,
+                accruedThisYear: leaveBalance.accruedThisYear,
+                carryForward: leaveBalance.carryForward,
+            };
+            try {
+                await this.auditService.log({
+                    actorId: currentUser?.id ?? null,
+                    action: 'leave.balance.manual.adjust',
+                    entityType: 'LeaveBalance',
+                    entityId: `${user}:${leaveType}:${year}`,
+                    before,
+                    after: { ...after, reason: reason ?? null },
+                });
+            } catch (error: any) {
+                this.logger.warn(`Audit log failed on leave-balance update: ${error?.message ?? error}`);
+            }
             return leaveBalance;
         } catch (error) {
             this.logger.error(error?.message ?? String(error), error?.stack);

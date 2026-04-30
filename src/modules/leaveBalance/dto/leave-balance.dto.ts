@@ -40,6 +40,19 @@ export class CreateLeaveBalanceDto {
     @IsString()
     @IsOptional()
     updatedBy?: UserEntity;
+
+    @ApiProperty({ required: false, description: 'Reason for a manual adjustment. Stored in the audit log only.' })
+    @IsString()
+    @IsOptional()
+    adjustmentReason?: string;
+
+    @ApiProperty({ required: false, description: 'Days accrued so far this year. Manual override.' })
+    @IsOptional()
+    accruedThisYear?: number | string;
+
+    @ApiProperty({ required: false, description: 'Carry-forward balance. Manual override.' })
+    @IsOptional()
+    carryForward?: number | string;
 }
 
 export class PartialCreateLeaveBalanceDto extends PartialType(

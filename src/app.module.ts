@@ -37,6 +37,7 @@ import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { CorrectionsModule } from './modules/corrections/corrections.module';
 import { AllocationsModule } from './modules/allocations/allocations.module';
 import { DashboardsModule } from './modules/dashboards/dashboards.module';
+import { PanelModule } from './modules/panel/panel.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { DashboardsModule } from './modules/dashboards/dashboards.module';
     CorrectionsModule,
     AllocationsModule,
     DashboardsModule,
+    PanelModule,
   ],
   controllers: [],
   providers: [
