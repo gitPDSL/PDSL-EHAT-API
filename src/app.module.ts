@@ -38,6 +38,7 @@ import { CorrectionsModule } from './modules/corrections/corrections.module';
 import { AllocationsModule } from './modules/allocations/allocations.module';
 import { DashboardsModule } from './modules/dashboards/dashboards.module';
 import { PanelModule } from './modules/panel/panel.module';
+import { PayslipsModule } from './modules/payslips/payslips.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { PanelModule } from './modules/panel/panel.module';
     AllocationsModule,
     DashboardsModule,
     PanelModule,
+    PayslipsModule,
   ],
   controllers: [],
   providers: [
