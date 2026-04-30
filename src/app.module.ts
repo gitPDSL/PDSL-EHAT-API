@@ -35,6 +35,8 @@ import { ExportsModule } from './modules/exports/exports.module';
 import { HolidaysModule } from './modules/holidays/holidays.module';
 import { BootstrapModule } from './bootstrap/bootstrap.module';
 import { CorrectionsModule } from './modules/corrections/corrections.module';
+import { AllocationsModule } from './modules/allocations/allocations.module';
+import { DashboardsModule } from './modules/dashboards/dashboards.module';
 
 @Module({
   imports: [
@@ -77,6 +79,8 @@ import { CorrectionsModule } from './modules/corrections/corrections.module';
     HolidaysModule,
     BootstrapModule,
     CorrectionsModule,
+    AllocationsModule,
+    DashboardsModule,
   ],
   controllers: [],
   providers: [
