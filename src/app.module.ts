@@ -7,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerInterceptor } from './interceptors/logger.interceptor';
 import { RolesGuard } from './guards/roles.guard';
+import { EmploymentTypeGuard } from './guards/employment.guard';
 import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { RequestIdMiddleware } from './middlewares/request-id/request-id.middleware';
 import { AuthModule } from './modules/auth/auth.module';
@@ -80,6 +81,7 @@ import { BootstrapModule } from './bootstrap/bootstrap.module';
     { provide: APP_INTERCEPTOR, useClass: LoggerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransfromInterceptor },
     { provide: APP_GUARD, useClass: RolesGuard },
+    { provide: APP_GUARD, useClass: EmploymentTypeGuard },
   ],
 })
 export class AppModule implements NestModule {

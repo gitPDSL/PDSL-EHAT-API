@@ -6,6 +6,9 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
 import { LeaveBalanceEntity } from 'src/database/postgres/entities/leave-balance.entity';
+import { RequireEmployment } from 'src/decorators/employment.decorator';
+
+@RequireEmployment('EMPLOYEE')
 @Controller('leaveBalances')
 export class LeaveBalancesController {
     constructor(

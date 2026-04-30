@@ -1,7 +1,7 @@
 import { ApiProperty, PartialType, OmitType } from "@nestjs/swagger";
-import { IsDateString, IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MinLength, ValidateIf } from "class-validator";
+import { IsDateString, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, Matches, MinLength, ValidateIf } from "class-validator";
 import { ACCOUNT_STATUS } from "src/constants/account.constants";
-import { UserEntity } from "src/database/postgres/entities/user.entity";
+import { EMPLOYMENT_TYPE, UserEntity } from "src/database/postgres/entities/user.entity";
 
 export class CreateUserDto {
     @ApiProperty()
@@ -67,6 +67,11 @@ export class CreateUserDto {
     @ValidateIf((_, v) => v !== null)
     @IsDateString()
     delegateTo?: string | null;
+
+    @ApiProperty({ required: false, enum: EMPLOYMENT_TYPE, description: 'Override employment type. If omitted, derived from email domain via EMPLOYEE_DOMAINS.' })
+    @IsOptional()
+    @IsEnum(EMPLOYMENT_TYPE)
+    employmentType?: EMPLOYMENT_TYPE;
 }
 
 export class PartialCreateUserDto extends PartialType(

@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from 'src/database/postgres/entities/user.entity';
+import { EMPLOYMENT_TYPE, UserEntity } from 'src/database/postgres/entities/user.entity';
+import { deriveEmploymentType } from '../employment-type.helper';
 import { MailService } from 'src/mail/mail.service';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -111,17 +112,25 @@ export class UserService {
                 userData.manager = { id: userData.manager };
             if (userData.department)
                 userData.department = { id: userData.department };
+            // Auto-detect employmentType from email unless the admin already
+            // set it on the request payload.
+            if (!userData.employmentType) {
+                userData.employmentType = deriveEmploymentType(userData.email);
+            }
             const user = await this.userRepository.create(userData);
             const newUser: any = await this.userRepository.save(user)
             if (newUser.status == ACCOUNT_STATUS.PENDING)
                 await this.sendVerificationMail(newUser);
-            try {
-                await this.leaveBalanceService.provisionForUser(newUser.id);
-            } catch (provisionError: any) {
-                this.logger.error(
-                    `Failed to provision leave balances for new user ${newUser.id}: ${provisionError?.message ?? provisionError}`,
-                    provisionError?.stack,
-                );
+            // Contractors do not accrue leave; skip provisioning entirely.
+            if (newUser.employmentType !== EMPLOYMENT_TYPE.CONTRACTOR) {
+                try {
+                    await this.leaveBalanceService.provisionForUser(newUser.id);
+                } catch (provisionError: any) {
+                    this.logger.error(
+                        `Failed to provision leave balances for new user ${newUser.id}: ${provisionError?.message ?? provisionError}`,
+                        provisionError?.stack,
+                    );
+                }
             }
             return user;
         } catch (error) {

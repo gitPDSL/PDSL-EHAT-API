@@ -25,6 +25,10 @@ export enum ACCOUNT_STATUS {
     INACTIVE = 'INACTIVE',
     BLOCKED = 'BLOCKED'
 }
+export enum EMPLOYMENT_TYPE {
+    EMPLOYEE = 'EMPLOYEE',
+    CONTRACTOR = 'CONTRACTOR',
+}
 @Entity('users')
 export class UserEntity {
     @ApiProperty()
@@ -67,6 +71,10 @@ export class UserEntity {
         default: ACCOUNT_STATUS.PENDING,
     })
     status: ACCOUNT_STATUS;
+
+    @ApiProperty({ required: false, nullable: true, description: 'EMPLOYEE for users on a recognised company domain (see EMPLOYEE_DOMAINS env), CONTRACTOR otherwise.' })
+    @Column({ type: 'varchar', length: 16, name: 'employment_type', nullable: true })
+    employmentType: EMPLOYMENT_TYPE | null;
 
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })

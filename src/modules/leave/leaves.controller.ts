@@ -8,6 +8,9 @@ import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
 import { Between, LessThan, LessThanOrEqual, MoreThan, MoreThanOrEqual } from 'typeorm';
 import * as moment from 'moment';
+import { RequireEmployment } from 'src/decorators/employment.decorator';
+
+@RequireEmployment('EMPLOYEE')
 @Controller('leaves')
 export class LeavesController {
     constructor(

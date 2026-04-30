@@ -10,6 +10,7 @@ export const RoleSeeds = async () => {
         const roleRepo = connectionSource.getRepository(RoleEntity);
         const roles = [
             { id: "MANAGER", name: "Manager", description: "Manager" },
+            { id: "SENIOR_MANAGER", name: "Senior Manager", description: "Approves all hours and leave for direct and indirect reportees" },
             { id: "USER", name: "Employee", description: "Employee" },
             { id: "ADMIN", name: "Admin User", description: "Admin User" },
             { id: "SUPER_ADMIN", name: "Super Admin", description: "Super Admin" },
