@@ -84,6 +84,14 @@ export class UserEntity {
     @Column({ type: 'numeric', precision: 5, scale: 2, name: 'weekly_target_hours', default: 40 })
     weeklyTargetHours: string;
 
+    @ApiProperty({ required: false, nullable: true, description: 'Hire date used for first-month leave accrual proration.' })
+    @Column({ type: 'date', name: 'hire_date', nullable: true })
+    hireDate: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: 'FULL_TIME or PART_TIME. Part-time scales leave accrual by weeklyTargetHours / 40.' })
+    @Column({ type: 'varchar', length: 16, name: 'contract_type', nullable: true })
+    contractType: string | null;
+
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;

@@ -17,6 +17,9 @@ export class LeaveTypeEntity {
     @ApiProperty({ description: 'Annual entitlement in days for this leave type' })
     @Column({ name: 'default_entitlement', type: 'int', default: 0 })
     defaultEntitlement: number;
+    @ApiProperty({ description: 'Whether this leave type requires manager approval before being deducted from the balance.' })
+    @Column({ name: 'requires_approval', type: 'boolean', default: true })
+    requiresApproval: boolean;
     @ApiProperty()
     @CreateDateColumn({ name: 'created_at', default: () => 'now()', type: 'timestamp' })
     createdAt: Date;
