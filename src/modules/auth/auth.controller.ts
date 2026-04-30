@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './service/auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -18,7 +19,10 @@ import { UpdateUserDto } from '../users/dto/user.dto';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly jwtService: JwtService,
+    ) { }
     @Post()
     @ApiOperation({ summary: 'Register a new user' })
     @ApiBody({ type: PartialCreateUserDto })
@@ -98,7 +102,17 @@ export class AuthController {
     @ApiResponseWrapper(class { })
     @Post('logout')
     async logout(@Req() req: Request): Promise<any> {
-        return this.authService.logout(req['user'].id);
+        // Logout is excluded from AuthMiddleware so the client can call it
+        // even with an expired/missing token. This avoids the
+        // 401-from-logout -> retry-logout loop the SPA had previously.
+        const auth = req.headers.authorization;
+        if (!auth) return { message: 'logged out' };
+        try {
+            const decoded: any = await this.jwtService.verifyAsync(auth.split(' ')[1]);
+            return await this.authService.logout(decoded.sub);
+        } catch {
+            return { message: 'logged out' };
+        }
     }
 
     @ApiOperation({ summary: 'Update logged user' })
