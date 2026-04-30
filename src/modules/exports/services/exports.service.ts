@@ -1,16 +1,16 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
 import * as moment from 'moment';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
-import { ClientEntity } from 'src/database/postgres/entities/client.entity';
-import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
+import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
+import { LeaveBalanceEntity } from 'src/database/postgres/entities/leave-balance.entity';
+import { AuditLogEntity } from 'src/database/postgres/entities/audit-log.entity';
 
-export interface InvoiceExportParams {
-    clientId: string;
-    year: number;
-    month: number; // 1-12
+export interface RangeParams {
+    from: string; // YYYY-MM-DD
+    to: string;   // YYYY-MM-DD
 }
 
 @Injectable()
@@ -19,77 +19,200 @@ export class ExportsService {
 
     constructor(
         @InjectRepository(TimesheetEntity) private readonly timesheetRepository: Repository<TimesheetEntity>,
-        @InjectRepository(ClientEntity) private readonly clientRepository: Repository<ClientEntity>,
-        @InjectRepository(ProjectUserEntity) private readonly projectUserRepository: Repository<ProjectUserEntity>,
+        @InjectRepository(LeaveEntity) private readonly leaveRepository: Repository<LeaveEntity>,
+        @InjectRepository(LeaveBalanceEntity) private readonly balanceRepository: Repository<LeaveBalanceEntity>,
+        @InjectRepository(AuditLogEntity) private readonly auditRepository: Repository<AuditLogEntity>,
     ) { }
 
-    async generateInvoiceWorkbook(params: InvoiceExportParams): Promise<{ buffer: Buffer; filename: string; currency: string; total: number }> {
-        if (!params.clientId) throw new BadRequestException('clientId is required');
-        if (!params.year || !params.month) throw new BadRequestException('year and month are required');
-        if (params.month < 1 || params.month > 12) throw new BadRequestException('month must be between 1 and 12');
+    private parseRange(p: RangeParams): { start: Date; end: Date; filename: string } {
+        if (!p?.from || !p?.to) throw new BadRequestException('from and to are required (YYYY-MM-DD)');
+        const start = moment(p.from).startOf('day').toDate();
+        const end = moment(p.to).endOf('day').toDate();
+        if (start > end) throw new BadRequestException('from must be on or before to');
+        const filename = `${p.from}_to_${p.to}`;
+        return { start, end, filename };
+    }
 
-        const client = await this.clientRepository.findOne({ where: { id: params.clientId } });
-        if (!client) throw new NotFoundException('Client not found');
+    private buildWorkbook(sheetName: string, header: string[], rows: any[][]): Buffer {
+        const wb = XLSX.utils.book_new();
+        const sheet = XLSX.utils.aoa_to_sheet([header, ...rows]);
+        XLSX.utils.book_append_sheet(wb, sheet, sheetName);
+        return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+    }
 
-        const start = moment({ year: params.year, month: params.month - 1, day: 1 }).startOf('day').toDate();
-        const end = moment(start).endOf('month').toDate();
-
+    /** Hours by project: rolled up per (project, user, status). Useful for handing off to the invoicing team. */
+    async hoursByProject(p: RangeParams): Promise<{ buffer: Buffer; filename: string }> {
+        const { start, end, filename } = this.parseRange(p);
         const timesheets = await this.timesheetRepository.find({
-            where: {
-                date: Between(start, end),
-                project: { client: { id: params.clientId } as any } as any,
-            } as any,
+            where: { date: Between(start, end) } as any,
             relations: ['user', 'project', 'project.client', 'status'],
         });
 
-        const projectUserRates = await this.projectUserRepository.find();
-        const rateLookup = new Map<string, number>();
-        for (const pu of projectUserRates) {
-            rateLookup.set(`${pu.projectId}|${pu.userId}`, Number(pu.hourlyRate) || 0);
-        }
-
-        const rows: Array<{
-            date: string;
-            employee: string;
-            project: string;
-            hours: number;
-            rate: number;
-            billable: string;
-            amount: number;
-            note: string;
-        }> = [];
-
-        let totalAmount = 0;
+        const buckets = new Map<string, {
+            project: string; client: string; user: string; statusId: string;
+            hours: number; entries: number;
+        }>();
         for (const ts of timesheets) {
             const t: any = ts;
-            const isBillable = t.billable === null || t.billable === undefined ? t.project?.billable !== false : t.billable === true;
-            if (!isBillable) continue;
-            const hours = Number(t.hours) || 0;
-            const rate = rateLookup.get(`${t.projectId}|${t.userId}`) ?? 0;
-            const amount = Math.round(hours * rate * 100) / 100;
-            totalAmount += amount;
-            rows.push({
-                date: moment(t.date).format('YYYY-MM-DD'),
-                employee: t.user?.fullName ?? '-',
-                project: t.project?.name ?? '-',
-                hours,
-                rate,
-                billable: 'Yes',
-                amount,
-                note: t.note ?? '',
-            });
+            const projectName = t.project?.name ?? '-';
+            const clientName = t.project?.client?.name ?? '-';
+            const userName = t.user?.fullName ?? t.user?.email ?? '-';
+            const statusId = t.status?.id ?? 'PENDING';
+            const key = `${projectName}|${clientName}|${userName}|${statusId}`;
+            const existing = buckets.get(key);
+            if (existing) {
+                existing.hours += Number(t.hours ?? 0);
+                existing.entries += 1;
+            } else {
+                buckets.set(key, {
+                    project: projectName, client: clientName, user: userName, statusId,
+                    hours: Number(t.hours ?? 0), entries: 1,
+                });
+            }
         }
 
-        const workbook = XLSX.utils.book_new();
-        const headerRow = ['Date', 'Employee', 'Project', 'Hours', `Rate (${client.currency})`, 'Billable', `Amount (${client.currency})`, 'Note'];
-        const dataRows = rows.map((r) => [r.date, r.employee, r.project, r.hours, r.rate, r.billable, r.amount, r.note]);
-        const totalRow = ['', '', '', '', '', 'Total', Math.round(totalAmount * 100) / 100, ''];
-        const aoa = [headerRow, ...dataRows, [], totalRow];
-        const sheet = XLSX.utils.aoa_to_sheet(aoa);
-        XLSX.utils.book_append_sheet(workbook, sheet, 'Invoice');
+        const rows = Array.from(buckets.values())
+            .sort((a, b) => a.project.localeCompare(b.project) || a.user.localeCompare(b.user))
+            .map((r) => [r.project, r.client, r.user, r.statusId, Math.round(r.hours * 100) / 100, r.entries]);
 
-        const buffer: Buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-        const filename = `invoice-${client.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${params.year}-${String(params.month).padStart(2, '0')}.xlsx`;
-        return { buffer, filename, currency: client.currency, total: Math.round(totalAmount * 100) / 100 };
+        const totalHours = rows.reduce((s, r) => s + Number(r[4] || 0), 0);
+        rows.push([], ['', '', '', 'Total hours', Math.round(totalHours * 100) / 100, '']);
+
+        const buffer = this.buildWorkbook(
+            'Hours by project',
+            ['Project', 'Client', 'Employee', 'Status', 'Hours', 'Entries'],
+            rows,
+        );
+        return { buffer, filename: `hours-by-project_${filename}.xlsx` };
+    }
+
+    /** Hours by user: per-user totals split by status. Useful for HR + payroll handoff. */
+    async hoursByUser(p: RangeParams): Promise<{ buffer: Buffer; filename: string }> {
+        const { start, end, filename } = this.parseRange(p);
+        const timesheets = await this.timesheetRepository.find({
+            where: { date: Between(start, end) } as any,
+            relations: ['user', 'status'],
+        });
+
+        const buckets = new Map<string, {
+            user: string; email: string;
+            approved: number; submitted: number; pending: number; rejected: number;
+        }>();
+        for (const ts of timesheets) {
+            const t: any = ts;
+            const userId = t.user?.id ?? '?';
+            const userName = t.user?.fullName ?? '-';
+            const email = t.user?.email ?? '-';
+            const statusId = t.status?.id ?? 'PENDING';
+            const hrs = Number(t.hours ?? 0);
+            if (!buckets.has(userId)) {
+                buckets.set(userId, { user: userName, email, approved: 0, submitted: 0, pending: 0, rejected: 0 });
+            }
+            const b = buckets.get(userId)!;
+            if (statusId === 'APPROVED') b.approved += hrs;
+            else if (statusId === 'SUBMITTED') b.submitted += hrs;
+            else if (statusId === 'REJECTED') b.rejected += hrs;
+            else b.pending += hrs;
+        }
+
+        const rows = Array.from(buckets.values())
+            .sort((a, b) => a.user.localeCompare(b.user))
+            .map((r) => [
+                r.user, r.email,
+                Math.round(r.approved * 100) / 100,
+                Math.round(r.submitted * 100) / 100,
+                Math.round(r.pending * 100) / 100,
+                Math.round(r.rejected * 100) / 100,
+                Math.round((r.approved + r.submitted + r.pending) * 100) / 100,
+            ]);
+
+        const buffer = this.buildWorkbook(
+            'Hours by user',
+            ['Employee', 'Email', 'Approved', 'Submitted', 'Pending', 'Rejected', 'Total (excl. rejected)'],
+            rows,
+        );
+        return { buffer, filename: `hours-by-user_${filename}.xlsx` };
+    }
+
+    /** Approval audit: every timesheet status transition in the range. Compliance evidence. */
+    async approvalAudit(p: RangeParams): Promise<{ buffer: Buffer; filename: string }> {
+        const { start, end, filename } = this.parseRange(p);
+        const entries = await this.auditRepository
+            .createQueryBuilder('a')
+            .leftJoinAndSelect('a.actor', 'actor')
+            .where('a.action IN (:...actions)', {
+                actions: ['timesheet.status.change', 'timesheet.correction.approved', 'timesheet.correction.denied'],
+            })
+            .andWhere('a.created_at BETWEEN :s AND :e', { s: start, e: end })
+            .orderBy('a.created_at', 'DESC')
+            .getMany();
+
+        const rows = entries.map((entry) => {
+            const e: any = entry;
+            const before = e.before?.status ?? '';
+            const after = e.after?.status ?? '';
+            return [
+                moment(e.createdAt).format('YYYY-MM-DD HH:mm'),
+                e.actor?.fullName ?? e.actor?.email ?? 'system',
+                e.action,
+                e.entityId,
+                before,
+                after,
+            ];
+        });
+
+        const buffer = this.buildWorkbook(
+            'Approval audit',
+            ['Timestamp', 'Actor', 'Action', 'Timesheet ID', 'Before', 'After'],
+            rows,
+        );
+        return { buffer, filename: `approval-audit_${filename}.xlsx` };
+    }
+
+    /** Leave summary: balances + days taken + remaining as of a date. */
+    async leaveSummary(p: RangeParams): Promise<{ buffer: Buffer; filename: string }> {
+        const { start, end, filename } = this.parseRange(p);
+        const year = moment(end).year();
+
+        const balances = await this.balanceRepository.find({
+            where: { year },
+            relations: ['user', 'leaveType'] as any,
+        });
+
+        const approvedLeaves = await this.leaveRepository
+            .createQueryBuilder('l')
+            .leftJoinAndSelect('l.user', 'u')
+            .leftJoinAndSelect('l.leaveType', 'lt')
+            .where('l.leave_status_id = :s', { s: 'APPROVED' })
+            .andWhere('l.start_date BETWEEN :ls AND :le', { ls: start, le: end })
+            .getMany();
+
+        const taken = new Map<string, number>();
+        for (const leave of approvedLeaves) {
+            const l: any = leave;
+            const days = Math.max(1, moment(l.endDate).diff(moment(l.startDate), 'days') + 1);
+            const key = `${l.user?.id}|${l.leaveType?.id}`;
+            taken.set(key, (taken.get(key) ?? 0) + days);
+        }
+
+        const rows = balances
+            .map((bal: any) => {
+                const userName = bal.user?.fullName ?? bal.user?.email ?? '-';
+                const email = bal.user?.email ?? '-';
+                const leaveType = bal.leaveType?.name ?? bal.leaveTypeId;
+                const accrued = Number(bal.accruedThisYear ?? 0);
+                const carry = Number(bal.carryForward ?? 0);
+                const used = taken.get(`${bal.userId}|${bal.leaveTypeId}`) ?? Number(bal.leavesUsed ?? 0);
+                const remaining = Math.max(0, accrued + carry - used);
+                return [userName, email, leaveType, accrued, carry, used, remaining];
+            })
+            .sort((a: any, b: any) => String(a[0]).localeCompare(String(b[0])));
+
+        const buffer = this.buildWorkbook(
+            `Leave summary ${year}`,
+            ['Employee', 'Email', 'Type', 'Accrued', 'Carry-forward', 'Taken', 'Remaining'],
+            rows,
+        );
+        return { buffer, filename: `leave-summary_${filename}.xlsx` };
     }
 }

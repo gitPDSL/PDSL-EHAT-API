@@ -3,11 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ExportsController } from './exports.controller';
 import { ExportsService } from './services/exports.service';
 import { TimesheetEntity } from 'src/database/postgres/entities/timesheet.entity';
-import { ClientEntity } from 'src/database/postgres/entities/client.entity';
-import { ProjectUserEntity } from 'src/database/postgres/entities/project-user.entity';
+import { LeaveEntity } from 'src/database/postgres/entities/leave.entity';
+import { LeaveBalanceEntity } from 'src/database/postgres/entities/leave-balance.entity';
+import { AuditLogEntity } from 'src/database/postgres/entities/audit-log.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([TimesheetEntity, ClientEntity, ProjectUserEntity])],
+    imports: [TypeOrmModule.forFeature([TimesheetEntity, LeaveEntity, LeaveBalanceEntity, AuditLogEntity])],
     controllers: [ExportsController],
     providers: [ExportsService],
 })

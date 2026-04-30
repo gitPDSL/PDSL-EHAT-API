@@ -8,28 +8,49 @@ import { Roles } from 'src/decorators/roles.decorator';
 export class ExportsController {
     constructor(private readonly exportsService: ExportsService) { }
 
-    @ApiOperation({ summary: 'Export a client invoice as XLSX (admin only). Filters billable hours for the given month and multiplies by the per-project-user hourly rate in the client\'s currency.' })
-    @ApiBearerAuth()
-    @ApiQuery({ name: 'clientId', required: true })
-    @ApiQuery({ name: 'year', required: true })
-    @ApiQuery({ name: 'month', required: true, description: '1-12' })
-    @Roles('ADMIN')
-    @Get('invoice')
-    async invoice(
-        @Query('clientId') clientId: string,
-        @Query('year') year: string,
-        @Query('month') month: string,
-        @Res() res: Response,
-    ): Promise<void> {
-        const result = await this.exportsService.generateInvoiceWorkbook({
-            clientId,
-            year: Number(year),
-            month: Number(month),
-        });
+    private send(res: Response, payload: { buffer: Buffer; filename: string }): void {
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
-        res.setHeader('X-Invoice-Currency', result.currency);
-        res.setHeader('X-Invoice-Total', String(result.total));
-        res.end(result.buffer);
+        res.setHeader('Content-Disposition', `attachment; filename="${payload.filename}"`);
+        res.end(payload.buffer);
+    }
+
+    @ApiOperation({ summary: 'Hours by project for a date range. XLSX. Admin only. Rolls hours up by (project, employee, status).' })
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: true, description: 'YYYY-MM-DD' })
+    @ApiQuery({ name: 'to', required: true, description: 'YYYY-MM-DD' })
+    @Roles('SUPER_ADMIN', 'ADMIN')
+    @Get('hours-by-project')
+    async hoursByProject(@Query('from') from: string, @Query('to') to: string, @Res() res: Response): Promise<void> {
+        this.send(res, await this.exportsService.hoursByProject({ from, to }));
+    }
+
+    @ApiOperation({ summary: 'Hours by employee for a date range. XLSX. Admin only. Splits totals across approved/submitted/pending/rejected.' })
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: true, description: 'YYYY-MM-DD' })
+    @ApiQuery({ name: 'to', required: true, description: 'YYYY-MM-DD' })
+    @Roles('SUPER_ADMIN', 'ADMIN')
+    @Get('hours-by-user')
+    async hoursByUser(@Query('from') from: string, @Query('to') to: string, @Res() res: Response): Promise<void> {
+        this.send(res, await this.exportsService.hoursByUser({ from, to }));
+    }
+
+    @ApiOperation({ summary: 'Approval audit for a date range. XLSX. Admin only. Lists every timesheet status change + correction approval/denial.' })
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: true, description: 'YYYY-MM-DD' })
+    @ApiQuery({ name: 'to', required: true, description: 'YYYY-MM-DD' })
+    @Roles('SUPER_ADMIN', 'ADMIN')
+    @Get('approval-audit')
+    async approvalAudit(@Query('from') from: string, @Query('to') to: string, @Res() res: Response): Promise<void> {
+        this.send(res, await this.exportsService.approvalAudit({ from, to }));
+    }
+
+    @ApiOperation({ summary: 'Leave summary as of a date. XLSX. Admin only. Per-user, per-leave-type accrued, carry-forward, taken (in range), remaining.' })
+    @ApiBearerAuth()
+    @ApiQuery({ name: 'from', required: true, description: 'YYYY-MM-DD' })
+    @ApiQuery({ name: 'to', required: true, description: 'YYYY-MM-DD' })
+    @Roles('SUPER_ADMIN', 'ADMIN')
+    @Get('leave-summary')
+    async leaveSummary(@Query('from') from: string, @Query('to') to: string, @Res() res: Response): Promise<void> {
+        this.send(res, await this.exportsService.leaveSummary({ from, to }));
     }
 }
