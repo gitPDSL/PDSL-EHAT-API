@@ -101,7 +101,11 @@ import { PayslipsModule } from './modules/payslips/payslips.module';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransfromInterceptor },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // ThrottlerGuard is intentionally NOT registered as APP_GUARD.
+    // A global ThrottlerGuard would apply the configured "auth" bucket
+    // (10 req / 15 min) to every endpoint, hammering the SPA. Instead
+    // the auth controller opts into throttling via @UseGuards on the
+    // login + forgot-password handlers only.
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: EmploymentTypeGuard },
   ],
