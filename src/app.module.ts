@@ -1,6 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
@@ -56,6 +57,16 @@ import { PayslipsModule } from './modules/payslips/payslips.module';
       signOptions: { expiresIn: process.env.JWT_EXPIRE_TIME || '60s' },
     }),
     ScheduleModule.forRoot(),
+    // Two named buckets:
+    //   - "auth" (10 req / 15 min per IP): protects login + forgot-password
+    //     from credential stuffing.
+    //   - "default" (100 req / min per IP): blanket protection on all other
+    //     endpoints. Render's health pinger and our crons hit /api/health
+    //     every ~5s; we mark that route with @SkipThrottle() in the controller.
+    ThrottlerModule.forRoot([
+        { name: 'default', limit: 100, ttl: 60_000 },
+        { name: 'auth', limit: 10, ttl: 15 * 60_000 },
+    ]),
     MailModule.forRoot(),
     PostgresModule.forRootAsync(),
     AuthModule,
@@ -90,6 +101,7 @@ import { PayslipsModule } from './modules/payslips/payslips.module';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: LoggerInterceptor },
     { provide: APP_INTERCEPTOR, useClass: TransfromInterceptor },
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
     { provide: APP_GUARD, useClass: EmploymentTypeGuard },
   ],

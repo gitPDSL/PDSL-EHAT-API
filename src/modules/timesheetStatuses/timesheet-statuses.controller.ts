@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TimesheetStatusEntity } from 'src/database/postgres/entities/timesheet-status.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @ApiTags('Timesheet Statuses')
 @Controller('timesheet-statuses')
 export class TimesheetStatusesController {
@@ -16,6 +17,7 @@ export class TimesheetStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateTimesheetStatusDto })
     @ApiResponseWrapper(TimesheetStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createTimesheetStatusDto: CreateTimesheetStatusDto, @Ip() ip: string): Promise<any> {
         return this.timesheetStatusService.create(createTimesheetStatusDto, req['user']);
@@ -44,6 +46,7 @@ export class TimesheetStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateTimesheetStatusDto })
     @ApiResponseWrapper(TimesheetStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateTimesheetStatusDto: UpdateTimesheetStatusDto, @Ip() ip: string): Promise<any> {
         return this.timesheetStatusService.update(id, updateTimesheetStatusDto, req['user']);
@@ -52,6 +55,7 @@ export class TimesheetStatusesController {
     @ApiOperation({ summary: 'Delete timesheet status' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.timesheetStatusService.remove(id);

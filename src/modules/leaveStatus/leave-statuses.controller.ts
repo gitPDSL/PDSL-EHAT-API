@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { LeaveStatusEntity } from 'src/database/postgres/entities/leave-status.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @Controller('leave-statuses')
 export class LeaveStatusesController {
     constructor(
@@ -15,6 +16,7 @@ export class LeaveStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateLeaveStatusDto })
     @ApiResponseWrapper(LeaveStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createLeaveStatusDto: CreateLeaveStatusDto, @Ip() ip: string): Promise<any> {
         return this.leaveStatusService.create(createLeaveStatusDto, req['user']);
@@ -43,6 +45,7 @@ export class LeaveStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateLeaveStatusDto })
     @ApiResponseWrapper(LeaveStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateLeaveStatusDto: UpdateLeaveStatusDto, @Ip() ip: string): Promise<any> {
         return this.leaveStatusService.update(id, updateLeaveStatusDto, req['user']);
@@ -51,6 +54,7 @@ export class LeaveStatusesController {
     @ApiOperation({ summary: 'Delete leaveStatus' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.leaveStatusService.remove(id);

@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { LeaveTypeEntity } from 'src/database/postgres/entities/leave-type.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @Controller('leave-types')
 export class LeaveTypesController {
     constructor(
@@ -15,6 +16,7 @@ export class LeaveTypesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateLeaveTypeDto })
     @ApiResponseWrapper(LeaveTypeEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createLeaveTypeDto: CreateLeaveTypeDto, @Ip() ip: string): Promise<any> {
         return this.leaveTypeService.create(createLeaveTypeDto, req['user']);
@@ -43,6 +45,7 @@ export class LeaveTypesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateLeaveTypeDto })
     @ApiResponseWrapper(LeaveTypeEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateLeaveTypeDto: UpdateLeaveTypeDto, @Ip() ip: string): Promise<any> {
         return this.leaveTypeService.update(id, updateLeaveTypeDto, req['user']);
@@ -51,6 +54,7 @@ export class LeaveTypesController {
     @ApiOperation({ summary: 'Delete Leave Type' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.leaveTypeService.remove(id);

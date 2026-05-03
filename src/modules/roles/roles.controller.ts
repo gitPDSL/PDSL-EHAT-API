@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { RoleEntity } from 'src/database/postgres/entities/role.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @Controller('roles')
 export class RolesController {
     constructor(
@@ -15,6 +16,7 @@ export class RolesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateRoleDto })
     @ApiResponseWrapper(RoleEntity)
+    @Roles('SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createRoleDto: CreateRoleDto, @Ip() ip: string): Promise<any> {
         return this.roleService.create(createRoleDto, req['user']);
@@ -43,6 +45,7 @@ export class RolesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateRoleDto })
     @ApiResponseWrapper(RoleEntity)
+    @Roles('SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto, @Ip() ip: string): Promise<any> {
         return this.roleService.update(id, updateRoleDto, req['user']);
@@ -51,6 +54,7 @@ export class RolesController {
     @ApiOperation({ summary: 'Delete role' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.roleService.remove(id);

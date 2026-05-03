@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { ClientEntity } from 'src/database/postgres/entities/client.entity';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('clients')
 export class ClientsController {
@@ -16,6 +17,7 @@ export class ClientsController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateClientDto })
     @ApiResponseWrapper(ClientEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createClientDto: CreateClientDto, @Ip() ip: string): Promise<any> {
         return this.clientService.create(createClientDto, req['user']);
@@ -43,6 +45,7 @@ export class ClientsController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateClientDto })
     @ApiResponseWrapper(ClientEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateClientDto: UpdateClientDto, @Ip() ip: string): Promise<any> {
         return this.clientService.update(id, updateClientDto, req['user']);
@@ -50,6 +53,7 @@ export class ClientsController {
     @ApiOperation({ summary: 'Delete client' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.clientService.remove(id);

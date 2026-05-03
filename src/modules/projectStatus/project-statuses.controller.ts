@@ -6,6 +6,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProjectStatusEntity } from 'src/database/postgres/entities/project-status.entity';
 import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 @ApiTags('Project Statuses')
 @Controller('project-statuses')
 export class ProjectStatusesController {
@@ -16,6 +17,7 @@ export class ProjectStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectStatusDto })
     @ApiResponseWrapper(ProjectStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createProjectStatusDto: CreateProjectStatusDto, @Ip() ip: string): Promise<any> {
         return this.ProjectStatusService.create(createProjectStatusDto, req['user']);
@@ -44,6 +46,7 @@ export class ProjectStatusesController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateProjectStatusDto })
     @ApiResponseWrapper(ProjectStatusEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     update(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string, @Body() updateProjectStatusDto: UpdateProjectStatusDto, @Ip() ip: string): Promise<any> {
         return this.ProjectStatusService.update(id, updateProjectStatusDto, req['user']);
@@ -52,6 +55,7 @@ export class ProjectStatusesController {
     @ApiOperation({ summary: 'Delete Project status' })
     @ApiBearerAuth()
     @ApiResponseWrapper(class { })
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     delete(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
         return this.ProjectStatusService.remove(id);

@@ -1,5 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Throttle } from '@nestjs/throttler';
 import { LoginUserDto } from './dto/login-user.dto';
 import { AuthService } from './service/auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -37,6 +38,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Login user' })
     @ApiBody({ type: LoginUserDto })
     @ApiResponseWrapper(AuthResponseDto)
+    @Throttle({ auth: { limit: 10, ttl: 15 * 60_000 } })
     @Post('login')
     async loginUser(
         @Body() loginUserDto: LoginUserDto,
@@ -61,6 +63,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Forgot password' })
     @ApiBody({ type: ForgotPasswordDto })
     @ApiResponseWrapper(class { })
+    @Throttle({ auth: { limit: 10, ttl: 15 * 60_000 } })
     @Post('forgot-password')
     async forgotPassword(@Body('email', ParseEmailPipe) email: string): Promise<any> {
         return this.authService.forgotPassword(email)

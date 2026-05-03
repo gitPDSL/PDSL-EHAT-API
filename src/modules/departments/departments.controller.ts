@@ -7,6 +7,7 @@ import { ApiResponseWrapper } from 'src/utills/api-response-wrapper.helper';
 import { DepartmentEntity } from 'src/database/postgres/entities/department.entity';
 import { UserService } from '../users/services/user.service';
 import { QueryTransformTypeorm } from 'src/utills/common.utill';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('departments')
 export class DepartmentsController {
@@ -19,6 +20,7 @@ export class DepartmentsController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateDepartmentDto })
     @ApiResponseWrapper(DepartmentEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Post()
     create(@Req() req: Request, @Body() createDepartmentDto: CreateDepartmentDto, @Ip() ip: string): Promise<any> {
         createDepartmentDto.createdBy = req['user'].id;
@@ -48,6 +50,7 @@ export class DepartmentsController {
     @ApiBearerAuth()
     @ApiBody({ type: PartialCreateDepartmentDto })
     @ApiResponseWrapper(DepartmentEntity)
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Put(':id')
     async update(@Req() req: Request,
         @Param('id', ParseUUIDPipe) id: string,
@@ -65,6 +68,7 @@ export class DepartmentsController {
 
     @ApiOperation({ summary: 'Delete department' })
     @ApiBearerAuth()
+    @Roles('ADMIN', 'SUPER_ADMIN')
     @Delete(':id')
     async delete(@Req() req: Request, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
         // console.log('hi-----------------------------------')
