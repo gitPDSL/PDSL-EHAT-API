@@ -57,14 +57,14 @@ import { PayslipsModule } from './modules/payslips/payslips.module';
       signOptions: { expiresIn: process.env.JWT_EXPIRE_TIME || '60s' },
     }),
     ScheduleModule.forRoot(),
-    // Two named buckets:
-    //   - "auth" (10 req / 15 min per IP): protects login + forgot-password
-    //     from credential stuffing.
-    //   - "default" (100 req / min per IP): blanket protection on all other
-    //     endpoints. Render's health pinger and our crons hit /api/health
-    //     every ~5s; we mark that route with @SkipThrottle() in the controller.
+    // We deliberately do NOT register a global throttle. Behind Render's
+    // reverse proxy every request shares one apparent IP from the API's
+    // perspective, so a global per-IP limit punishes legitimate SPA usage
+    // (notifications polling + a busy page like Approvals can fire 20+
+    // requests in a burst). Instead we apply a tight bucket only to the
+    // login + forgot-password endpoints via @Throttle on the handler;
+    // those are what actually need brute-force protection.
     ThrottlerModule.forRoot([
-        { name: 'default', limit: 100, ttl: 60_000 },
         { name: 'auth', limit: 10, ttl: 15 * 60_000 },
     ]),
     MailModule.forRoot(),
