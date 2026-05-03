@@ -38,8 +38,15 @@ export class UsersController {
     getAll(@Query() query: Record<string, any>): Promise<any> {
         query = QueryTransformTypeorm(query);
 
-        if (!query.relations)
-            query.relations = ['department', 'role', 'manager']
+        // Coerce relations to an array. The query transform may leave it
+        // as a comma-separated string when there is only one value.
+        if (query.relations) {
+            if (typeof query.relations === 'string') {
+                query.relations = query.relations.split(',').filter((a: string) => a);
+            }
+        } else {
+            query.relations = ['department', 'role', 'manager'];
+        }
 
         return this.userService.findAll(query);
     }

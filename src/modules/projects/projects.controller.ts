@@ -45,8 +45,13 @@ export class ProjectsController {
     @Get()
     getAll(@Query() query: Record<string, any>): Promise<any> {
         query = QueryTransformTypeorm(query);
-        if (query.relations)
-            query.relations = query.relations.filter(a => a);
+        if (query.relations) {
+            if (typeof query.relations === 'string') {
+                query.relations = query.relations.split(',').filter((a: string) => a);
+            } else {
+                query.relations = query.relations.filter((a: string) => a);
+            }
+        }
         return this.projectService.findAll(query);
     }
     @ApiOperation({ summary: 'Get project' })
@@ -55,8 +60,13 @@ export class ProjectsController {
     @Get(':id')
     get(@Query() query: Record<string, any> = {}, @Param('id', ParseUUIDPipe) id: string): Promise<any> {
         query = QueryTransformTypeorm(query);
-        if (query.relations)
-            query.relations = query.relations.filter(a => a);
+        if (query.relations) {
+            if (typeof query.relations === 'string') {
+                query.relations = query.relations.split(',').filter((a: string) => a);
+            } else {
+                query.relations = query.relations.filter((a: string) => a);
+            }
+        }
         return this.projectService.findById(id);
     }
 
