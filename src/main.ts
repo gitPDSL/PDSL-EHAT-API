@@ -32,6 +32,12 @@ async function bootstrap() {
   }
   void httpsOptions;
   const server = express()
+  // Trust the reverse proxy in front of us (Render's edge) so that
+  // req.ip resolves to the real client IP via X-Forwarded-For. This is
+  // required for the auth-endpoint throttler to bucket per-client rather
+  // than per-LB-edge. Setting "true" trusts every hop; when we move
+  // behind a known nginx we can tighten this to a specific subnet.
+  server.set('trust proxy', true);
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
