@@ -3,6 +3,14 @@ import { MoreThanOrEqual, MoreThan, LessThanOrEqual, LessThan, In, Not } from "t
 export const QueryTransformTypeorm = (query: Record<string, any>, acc: any = null) => {
     acc = acc || query;
     Object.keys(query).forEach((key) => {
+        // relations / select are always arrays. Without this branch a
+        // single value like ?relations=manager stays as a plain string,
+        // and downstream `.filter(...)` calls or TypeORM relation iteration
+        // would treat it as a char array and explode.
+        if ((key === 'relations' || key === 'select') && typeof query[key] === 'string') {
+            acc[key] = query[key].split(',').filter((v: string) => v.length > 0);
+            return key;
+        }
         if (query[key].includes('||'))
             acc[key] = query[key].split('||');
         else if (query[key].includes(','))
