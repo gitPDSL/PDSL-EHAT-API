@@ -40,6 +40,12 @@ export class UserEntity {
     @ApiProperty()
     @Column({ type: 'text', nullable: true, unique: true })
     email: string | null;
+    @ApiProperty({ required: false, nullable: true, description: '4-5 digit company employee id.' })
+    @Column({ type: 'varchar', length: 8, name: 'employee_id', nullable: true, unique: true })
+    employeeId: string | null;
+    @ApiProperty({ required: false, nullable: true, description: 'Auto-generated from full name + employee id. Accepted as a login identifier in place of email.' })
+    @Column({ type: 'varchar', length: 64, nullable: true, unique: true })
+    username: string | null;
     @ApiProperty()
     @Column({ type: 'text', name: 'password_hash', select: false, nullable: true })
     passwordHash: string;

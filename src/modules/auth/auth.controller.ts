@@ -35,7 +35,7 @@ export class AuthController {
     ): Promise<any> {
         return this.authService.userService.create(registerUserDto);
     }
-    @ApiOperation({ summary: 'Login user' })
+    @ApiOperation({ summary: 'Login user', description: 'The "email" field accepts either an email address or a username.' })
     @ApiBody({ type: LoginUserDto })
     @ApiResponseWrapper(AuthResponseDto)
     @UseGuards(ThrottlerGuard)
@@ -43,10 +43,13 @@ export class AuthController {
     @Post('login')
     async loginUser(
         @Body() loginUserDto: LoginUserDto,
-        @Body('email', ParseEmailPipe) email: string,
         @Body('password', PasswordValidationPipe) password: string
 
     ): Promise<AuthResponseDto> {
+        // Login accepts an email or a username in the same field. The
+        // service decides which column to look up on. We deliberately do
+        // not run ParseEmailPipe here because it rejects values without
+        // an '@'. Trim + lowercase happen in the service.
         return this.authService.signIn(loginUserDto)
     }
     @ApiOperation({ summary: 'Verify user' })

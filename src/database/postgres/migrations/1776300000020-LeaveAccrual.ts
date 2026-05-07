@@ -45,16 +45,16 @@ export class LeaveAccrual1776300000020 implements MigrationInterface {
         `);
 
         // Idempotent default rules. Numbers tuned for typical UK contracts:
-        //   ANNUAL  → 2.083/mo, cap 25, carry-forward up to 5
-        //   SICK    → 0.833/mo, cap 10, no carry forward
-        //   CASUAL  → 0.500/mo, cap  6, no carry forward
+        //   ANNUAL  → 1.667/mo, cap 20, carry-forward up to 5
+        //   SICK    → 0,        approval-based, no accrual
+        //   CASUAL  → 0,        approval-based, no accrual
         await queryRunner.query(`
             INSERT INTO "leave_accrual_rules"
                 ("leave_type_id", "accrual_per_month", "cap_days", "carry_forward_cap", "applies_to_full_time", "applies_to_part_time")
             VALUES
-                ('ANNUAL', 2.083, 25, 5, true, true),
-                ('SICK',   0.833, 10, 0, true, true),
-                ('CASUAL', 0.500,  6, 0, true, true)
+                ('ANNUAL', 1.667, 20, 5, true, true),
+                ('SICK',   0,      0, 0, true, true),
+                ('CASUAL', 0,      0, 0, true, true)
             ON CONFLICT ("leave_type_id") DO NOTHING
         `);
     }

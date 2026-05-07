@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { EMPLOYMENT_TYPE, UserEntity } from 'src/database/postgres/entities/user.entity';
 import { deriveEmploymentType } from '../employment-type.helper';
+import { buildUsername } from '../username.helper';
 import { MailService } from 'src/mail/mail.service';
 import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -26,12 +27,20 @@ export class UserService {
     ) {
     }
     async findByEmailAndPassword(email: string, password: string): Promise<any> {
+        // The login form labels the field "email" but accepts username too.
+        // We pick the field to look up on by whether the value contains '@'.
+        const identifier = (email ?? '').trim();
+        const isEmail = identifier.includes('@');
+        const where = isEmail
+            ? { email: identifier.toLowerCase() }
+            : { username: identifier.toLowerCase() };
         const user = await this.userRepository.findOne({
-            where: { email }, select: [
+            where, select: [
                 'id',
                 'passwordHash', // explicitly include password
                 'fullName',
                 'email',
+                'username',
                 'role',
                 'status'
             ],
@@ -117,6 +126,15 @@ export class UserService {
             if (!userData.employmentType) {
                 userData.employmentType = deriveEmploymentType(userData.email);
             }
+            // Auto-generate username when an employeeId is present and the
+            // caller didn't pass one. Skip if no employeeId on the row.
+            if (!userData.username && userData.employeeId) {
+                userData.username = buildUsername({
+                    fullName: userData.fullName,
+                    email: userData.email,
+                    employeeId: userData.employeeId,
+                });
+            }
             const user = await this.userRepository.create(userData);
             const newUser: any = await this.userRepository.save(user)
             if (newUser.status == ACCOUNT_STATUS.PENDING)
@@ -185,6 +203,19 @@ export class UserService {
                 userData.department = { id: userData.department };
             let user: any = await this.userRepository.findOne({ where: { id }, relations: ['role'] }) || {};
             const prevRoleId: string | null = user?.role?.id ?? null;
+            // If the admin sets/changes employeeId or fullName and no username
+            // was supplied explicitly, regenerate the username.
+            if (userData.username === undefined) {
+                const nextEmpId = userData.employeeId ?? user.employeeId;
+                const nextFullName = userData.fullName ?? user.fullName;
+                if (nextEmpId && (userData.employeeId !== undefined || userData.fullName !== undefined) && !user.username) {
+                    userData.username = buildUsername({
+                        fullName: nextFullName,
+                        email: userData.email ?? user.email,
+                        employeeId: nextEmpId,
+                    });
+                }
+            }
             Object.keys(userData).map(key => {
                 user[key] = userData[key];
             })

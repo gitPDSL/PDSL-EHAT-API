@@ -92,6 +92,18 @@ export class CreateUserDto {
     @ValidateIf((_, v) => v !== null)
     @IsString()
     contractType?: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: '4-5 digit numeric employee id.' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null && v !== '')
+    @Matches(/^\d{4,5}$/, { message: 'Employee id must be 4 or 5 digits' })
+    employeeId?: string | null;
+
+    @ApiProperty({ required: false, nullable: true, description: 'Username (lowercase, dot-separated). Auto-generated from full name + employee id when omitted.' })
+    @IsOptional()
+    @ValidateIf((_, v) => v !== null && v !== '')
+    @Matches(/^[a-z0-9.]{3,64}$/, { message: 'Username must be 3-64 chars, lowercase letters, digits, and dots only' })
+    username?: string | null;
 }
 
 export class PartialCreateUserDto extends PartialType(
