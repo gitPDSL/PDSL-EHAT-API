@@ -30,6 +30,7 @@ export class MailModule {
                         return {
                             transport: {
                                 service: configService.get('SMTP_SERVICE'),
+				family:4,
                                 auth: {
                                     type: 'OAuth2',
                                     user: configService.get('SMTP_EMAIL_USER'),
